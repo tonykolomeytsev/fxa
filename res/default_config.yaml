@@ -1,0 +1,25 @@
+figma:
+  # Identifier of the Figma file. To obtain a file id, open the file in the browser. 
+  # The file id will be present in the URL after the word file and before the file name.
+  fileId: YOUR_FIGMA_FILE_ID
+  # [Optional] Page name inside the Figma file.
+  # If you do not specify this parameter, the search for resources will be performed ON ALL PAGES of the file.
+  pageName: Resources
+common:
+  images:
+    # [Optional] Name of the Figma's frame where images are located. Default is Images
+    figmaFrameName: Illustrations
+android:
+  # Relative or absolute path to the `main/res` folder of your android project.
+  mainRes: ./app/src/main/res
+  images:
+    # [Optional] An array of asset scales that should be downloaded. 
+    # The valid values are 1 (mdpi), 1.5 (hdpi), 2 (xhdpi), 3 (xxhdpi), 4 (xxxhdpi).
+    # Default is [1, 1.5, 2, 3]
+    scales: [1, 1.5, 2, 3]
+    # [Optional] Exported images file format: png | webp | svg. Default is webp
+    format: webp
+    webpOptions:
+      # [Optional] Encoding quality in percents. You can use 100% for loseless encoding. Default is 85
+      quality: 85
+
