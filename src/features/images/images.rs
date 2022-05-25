@@ -4,9 +4,10 @@ use std::time::Duration;
 
 use reqwest::blocking::Client;
 
-use crate::api::figma::{FigmaApi, FIGMA_FILES_ENDPOINT};
+use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
+use crate::common::webp;
 use crate::feature_images::renderer::{FeatureImagesRenderer, View};
-use crate::models::config::AppConfig;
+use crate::models::config::{AppConfig, ImageFormat};
 use crate::models::figma::{Document, Frame};
 
 #[derive(Debug)]
@@ -155,37 +156,93 @@ fn export_image(
 ) {
     let file_id = &app_config.figma.file_id;
     let frame_name = &app_config.common.images.figma_frame_name;
+    let image_format = &app_config.android.images.format;
+    let quality = app_config.android.images.webp_options.quality;
     match images_table.get(image_name) {
-        Some(node_id) => match api.get_image_download_url(file_id, node_id, image_scale) {
-            Ok(image_url) => {
-                renderer.render(View::DownloadingImage(image_name.clone(), image_scale));
-                let image_format = &app_config.android.images.format;
-                let image_file_name = api.get_image(&image_url, image_format);
-                match image_file_name {
-                    Ok(image_file_name) => {
-                        renderer.render(View::ImageDownloaded(image_name.clone(), image_scale));
-                        renderer.new_line();
-                    }
-                    Err(e) => {
-                        renderer.render(View::Error {
-                            description: format!("{}", e),
-                        });
-                        renderer.new_line();
-                    }
-                }
-            }
-            Err(e) => {
+        Some(node_id) => {
+            let result = api
+                .get_image_download_url(file_id, node_id, image_scale)
+                .map_err(&to_feature_images_error)
+                .and_then(|image_url| {
+                    renderer.render(View::DownloadingImage(image_name.clone(), image_scale));
+                    let image_format = &app_config.android.images.format;
+                    api.get_image(&image_url, image_format)
+                        .map_err(&to_feature_images_error)
+                })
+                .and_then(|image_file_name| {
+                    renderer.render(View::ImageDownloaded(image_name.clone(), image_scale));
+                    convert_image_to_webp_if_necessary(
+                        &image_name,
+                        image_scale,
+                        image_file_name,
+                        image_format,
+                        quality,
+                        renderer,
+                    )
+                })
+                .and_then(|image_file_name| {
+                    let res_path = &app_config.android.main_res;
+                    let drawable_folder = match image_scale {
+                        1f32 => "mdpi",
+                        1.5f32 => "hdpi",
+                        2f32 => "xhdpi",
+                        3f32 => "xxhdpi",
+                        4f32 => "xxxhdpi",
+                        _ => {
+                            return Err(FeatureImagesError {
+                                message: String::new(),
+                                cause: String::new(),
+                            })
+                        }
+                    };
+                    renderer.new_line();
+                    Ok(())
+                });
+            if let Err(e) = result {
                 renderer.render(View::Error {
                     description: format!("{}", e),
                 });
                 renderer.new_line();
             }
-        },
+        }
         None => renderer.render(View::Error {
             description: format!(
                 "occurred because an image `{}` is missing in frame `{}`",
                 &image_name, &frame_name
             ),
         }),
+    }
+}
+
+fn to_feature_images_error(e: FigmaApiError) -> FeatureImagesError {
+    FeatureImagesError {
+        message: e.message,
+        cause: e.cause,
+    }
+}
+
+fn convert_image_to_webp_if_necessary(
+    image_name: &String,
+    image_scale: f32,
+    image_file_name: String,
+    image_format: &ImageFormat,
+    quality: f32,
+    renderer: &mut FeatureImagesRenderer,
+) -> Result<String, FeatureImagesError> {
+    match image_format {
+        ImageFormat::Webp => {
+            renderer.render(View::ConvertingToWebp(image_name.clone(), image_scale));
+            match webp::image_to_webp(&image_file_name, quality) {
+                Some(new_image_path) => {
+                    renderer.render(View::ConvertedToWebp(image_name.clone(), image_scale));
+                    Ok(new_image_path)
+                }
+                None => Err(FeatureImagesError {
+                    message: "while converting PNG to WEBP".to_string(),
+                    cause: "something went wrong in webp module".to_string(),
+                }),
+            }
+        }
+        _ => Ok(image_file_name),
     }
 }

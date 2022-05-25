@@ -4,7 +4,10 @@ use crossterm::{
     terminal::{self, ClearType},
     QueueableCommand,
 };
-use std::io::{stdout, Stdout, Write};
+use std::{
+    fmt::format,
+    io::{stdout, Stdout, Write},
+};
 
 pub struct FeatureImagesRenderer {
     stdout: Stdout,
@@ -20,6 +23,8 @@ pub enum View {
     FetchingImage(String, f32),
     DownloadingImage(String, f32),
     ImageDownloaded(String, f32),
+    ConvertingToWebp(String, f32),
+    ConvertedToWebp(String, f32),
     Error { description: String },
     Done { message: Option<String> },
 }
@@ -93,6 +98,22 @@ impl FeatureImagesRenderer {
                 format!(
                     "  {} image {} in scale {}\n",
                     "Downloaded".bold().green(),
+                    &image_name,
+                    &scale,
+                )
+            }),
+            View::ConvertingToWebp(image_name, scale) => self.apply(|| {
+                format!(
+                    "  {} to WEBP image {} in scale {}...\n",
+                    "Converting".bold().cyan(),
+                    &image_name,
+                    &scale,
+                )
+            }),
+            View::ConvertedToWebp(image_name, scale) => self.apply(|| {
+                format!(
+                    "   {} to WEBP image {} in scale {}\n",
+                    "Converted".bold().green(),
                     &image_name,
                     &scale,
                 )

@@ -11,6 +11,7 @@ lto = true
 [dependencies]
 clap = { version = "3.1.18", features = ["derive", "env"] }
 webp = "0.2.2"
+image = "0.24.2"
 crossterm = "0.23.2"
 serde = { version = "1.0.137", features = ["derive"] }
 serde_yaml = "0.8.24"

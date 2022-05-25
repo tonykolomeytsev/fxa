@@ -101,29 +101,38 @@ impl FigmaApi {
         image_format: &ImageFormat,
     ) -> Result<String, FigmaApiError> {
         let response = self.client.get(image_url).send();
-        match_response_internal(response, &image_url, |response| match response.bytes() {
-            Ok(bytes) => {
-                create_temp_dir().unwrap();
-                let image_file_name = format!(
-                    "{}/{}{}",
-                    TEMP_DIR_PATH,
-                    uuid::Uuid::new_v4(),
-                    image_format.as_download_extension(),
-                );
-                match fs::write(&image_file_name, bytes) {
-                    Ok(()) => Ok(image_file_name),
-                    Err(e) => {
-                        let message = format!("while saving in temp dir image from {}", &image_url);
-                        let cause = format!("{}", e);
-                        Err(FigmaApiError { message, cause })
-                    }
-                }
-            }
-            Err(e) => {
-                let message = format!("while getting bytes of response: {}", &image_url);
-                let cause = format!("{}", e);
-                Err(FigmaApiError { message, cause })
-            }
+        match_response_internal(response, &image_url, |response| {
+            response
+                .bytes()
+                .map_err(|e| {
+                    let message = format!("while getting bytes of response: {}", &image_url);
+                    let cause = format!("{}", e);
+                    FigmaApiError { message, cause }
+                })
+                .and_then(|bytes| {
+                    create_temp_dir()
+                        .map_err(|e| {
+                            let message = "while creating temp dir".to_string();
+                            let cause = format!("{}", e);
+                            FigmaApiError { message, cause }
+                        })
+                        .map(|()| bytes)
+                })
+                .and_then(|bytes| {
+                    let image_file_name = format!(
+                        "{}/{}{}",
+                        TEMP_DIR_PATH,
+                        uuid::Uuid::new_v4(),
+                        image_format.as_download_extension(),
+                    );
+                    fs::write(&image_file_name, bytes)
+                        .map_err(|e| {
+                            let message = "while writing to temp image file".to_string();
+                            let cause = format!("{}", e);
+                            FigmaApiError { message, cause }
+                        })
+                        .map(|()| image_file_name)
+                })
         })
     }
 }
