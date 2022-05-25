@@ -88,7 +88,10 @@ impl FigmaApi {
                 Ok(response) => Ok(response.images.get(node_id).unwrap().clone()), // todo: unwrap safe
                 Err(e) => {
                     let message = format!("while parsing json response from {}", &url);
-                    let cause = format!("{}", e);
+                    let recomendation = "Check your VPN settings and make sure the \
+                    address is reachable through your network"
+                        .to_string();
+                    let cause = format!("{}\n{}", e, recomendation);
                     Err(FigmaApiError { message, cause })
                 }
             }
@@ -158,7 +161,10 @@ where
         },
         Err(e) => {
             let message = format!("while requesting {}", &url);
-            let cause = format!("{}", e);
+            let recomendation = "Check your VPN settings and make sure the \
+            address is reachable through your network"
+                .to_string();
+            let cause = format!("{}\n{}", e, recomendation);
             Err(FigmaApiError { message, cause })
         }
     }
