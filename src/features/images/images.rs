@@ -216,7 +216,6 @@ fn export_image(
                         .map_err(&map_fileutils_error)
                 })
                 .and_then(|()| {
-                    println!("KEK");
                     renderer.render(View::ImageExported(
                         image_name.clone(),
                         image_scale_name.clone(),

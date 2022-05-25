@@ -118,7 +118,7 @@ impl FeatureImagesRenderer {
             }),
             View::ImageExported(image_name, scale) => self.apply(|| {
                 format!(
-                    "    {} successfully image {} ({})",
+                    "    {} successfully image {} ({})\n",
                     "Exported".bold().green(),
                     &image_name,
                     &scale,
