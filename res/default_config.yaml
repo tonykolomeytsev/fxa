@@ -13,10 +13,12 @@ android:
   # Relative or absolute path to the `main/res` folder of your android project.
   mainRes: ./app/src/main/res
   images:
-    # [Optional] An array of asset scales that should be downloaded. 
-    # The valid values are 1 (mdpi), 1.5 (hdpi), 2 (xhdpi), 3 (xxhdpi), 4 (xxxhdpi).
-    # Default is [1, 1.5, 2, 3]
-    scales: [1, 1.5, 2, 3]
+    # [Optional] An array of asset scales that should be downloaded.
+    scales:
+      mdpi: 1.0
+      hdpi: 1.5
+      xhdpi: 2
+      xxhdpi: 3
     # [Optional] Exported images file format: png | webp | svg. Default is webp
     format: webp
     webpOptions:

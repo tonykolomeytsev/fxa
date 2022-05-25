@@ -98,6 +98,8 @@ impl FigmaApi {
     pub fn get_image(
         &self,
         image_url: &String,
+        image_name: &String,
+        image_scale_name: &String,
         image_format: &ImageFormat,
     ) -> Result<String, FigmaApiError> {
         let response = self.client.get(image_url).send();
@@ -111,18 +113,18 @@ impl FigmaApi {
                 })
                 .and_then(|bytes| {
                     create_temp_dir()
-                        .map_err(|e| {
-                            let message = "while creating temp dir".to_string();
-                            let cause = format!("{}", e);
-                            FigmaApiError { message, cause }
+                        .map_err(|e| FigmaApiError {
+                            message: e.message,
+                            cause: e.cause,
                         })
                         .map(|()| bytes)
                 })
                 .and_then(|bytes| {
                     let image_file_name = format!(
-                        "{}/{}{}",
+                        "{}/{}_{}{}",
                         TEMP_DIR_PATH,
-                        uuid::Uuid::new_v4(),
+                        &image_name,
+                        &image_scale_name,
                         image_format.as_download_extension(),
                     );
                     fs::write(&image_file_name, bytes)

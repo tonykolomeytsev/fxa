@@ -4,10 +4,7 @@ use crossterm::{
     terminal::{self, ClearType},
     QueueableCommand,
 };
-use std::{
-    fmt::format,
-    io::{stdout, Stdout, Write},
-};
+use std::io::{stdout, Stdout, Write};
 
 pub struct FeatureImagesRenderer {
     stdout: Stdout,
@@ -20,11 +17,12 @@ pub enum View {
     DomFetched { url: String },
     ProcessingDom,
     FoundImages(String),
-    FetchingImage(String, f32),
-    DownloadingImage(String, f32),
-    ImageDownloaded(String, f32),
-    ConvertingToWebp(String, f32),
-    ConvertedToWebp(String, f32),
+    FetchingImage(String, String),
+    DownloadingImage(String, String),
+    ImageDownloaded(String, String),
+    ConvertingToWebp(String, String),
+    ConvertedToWebp(String, String),
+    ImageExported(String, String),
     Error { description: String },
     Done { message: Option<String> },
 }
@@ -80,7 +78,7 @@ impl FeatureImagesRenderer {
             }),
             View::FetchingImage(image_name, scale) => self.apply(|| {
                 format!(
-                    "    {} download url for image {} in scale {}\n",
+                    "    {} download url for image {} ({})\n",
                     "Fetching".bold().cyan(),
                     &image_name,
                     &scale,
@@ -88,7 +86,7 @@ impl FeatureImagesRenderer {
             }),
             View::DownloadingImage(image_name, scale) => self.apply(|| {
                 format!(
-                    " {} image {} in scale {}\n",
+                    " {} image {} ({})\n",
                     "Downloading".bold().cyan(),
                     &image_name,
                     &scale,
@@ -96,7 +94,7 @@ impl FeatureImagesRenderer {
             }),
             View::ImageDownloaded(image_name, scale) => self.apply(|| {
                 format!(
-                    "  {} image {} in scale {}\n",
+                    "  {} image {} ({})\n",
                     "Downloaded".bold().green(),
                     &image_name,
                     &scale,
@@ -104,7 +102,7 @@ impl FeatureImagesRenderer {
             }),
             View::ConvertingToWebp(image_name, scale) => self.apply(|| {
                 format!(
-                    "  {} to WEBP image {} in scale {}...\n",
+                    "  {} to WEBP image {} ({})...\n",
                     "Converting".bold().cyan(),
                     &image_name,
                     &scale,
@@ -112,8 +110,16 @@ impl FeatureImagesRenderer {
             }),
             View::ConvertedToWebp(image_name, scale) => self.apply(|| {
                 format!(
-                    "   {} to WEBP image {} in scale {}\n",
+                    "   {} to WEBP image {} ({})\n",
                     "Converted".bold().green(),
+                    &image_name,
+                    &scale,
+                )
+            }),
+            View::ImageExported(image_name, scale) => self.apply(|| {
+                format!(
+                    "    {} successfully image {} ({})",
+                    "Exported".bold().green(),
                     &image_name,
                     &scale,
                 )

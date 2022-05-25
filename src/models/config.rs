@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use std::collections::HashMap;
 use std::fmt;
 use std::fs::File;
 
@@ -89,7 +90,7 @@ pub struct AndroidConfig {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AndroidImagesConfig {
-    pub scales: Vec<f32>,
+    pub scales: HashMap<String, f32>,
     pub format: ImageFormat,
     pub webp_options: AndroidImagesWebpConfig,
 }

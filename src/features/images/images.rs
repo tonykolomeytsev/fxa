@@ -5,6 +5,7 @@ use std::time::Duration;
 use reqwest::blocking::Client;
 
 use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
+use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
 use crate::common::webp;
 use crate::feature_images::renderer::{FeatureImagesRenderer, View};
 use crate::models::config::{AppConfig, ImageFormat};
@@ -19,6 +20,17 @@ pub struct FeatureImagesError {
 impl fmt::Display for FeatureImagesError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}\nCaused by: {}", &self.message, &self.cause)
+    }
+}
+
+impl ImageFormat {
+    fn extension(&self) -> String {
+        match &self {
+            ImageFormat::Jpeg => "jpeg".to_string(),
+            ImageFormat::Png => "png".to_string(),
+            ImageFormat::Svg => "svg".to_string(),
+            ImageFormat::Webp => "webp".to_string(),
+        }
     }
 }
 
@@ -61,17 +73,18 @@ pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: 
             renderer.new_line();
             let image_scales = &app_config.android.images.scales;
             for image_name in image_names {
-                for &image_scale in image_scales {
-                    renderer.render(View::FetchingImage(image_name.clone(), image_scale));
+                image_scales.iter().for_each(|(scale_name, scale_value)| {
+                    renderer.render(View::FetchingImage(image_name.clone(), scale_name.clone()));
                     export_image(
                         &api,
                         &app_config,
                         &image_name,
-                        image_scale,
+                        &scale_name,
+                        *scale_value,
                         &images_table,
                         &mut renderer,
                     );
-                }
+                });
             }
             Ok(images_table)
         });
@@ -150,7 +163,8 @@ fn export_image(
     api: &FigmaApi,
     app_config: &AppConfig,
     image_name: &String,
-    image_scale: f32,
+    image_scale_name: &String,
+    image_scale_value: f32,
     images_table: &HashMap<String, String>,
     renderer: &mut FeatureImagesRenderer,
 ) {
@@ -161,40 +175,52 @@ fn export_image(
     match images_table.get(image_name) {
         Some(node_id) => {
             let result = api
-                .get_image_download_url(file_id, node_id, image_scale)
-                .map_err(&to_feature_images_error)
+                .get_image_download_url(file_id, node_id, image_scale_value)
+                .map_err(&map_figma_api_error)
                 .and_then(|image_url| {
-                    renderer.render(View::DownloadingImage(image_name.clone(), image_scale));
+                    renderer.render(View::DownloadingImage(
+                        image_name.clone(),
+                        image_scale_name.clone(),
+                    ));
                     let image_format = &app_config.android.images.format;
-                    api.get_image(&image_url, image_format)
-                        .map_err(&to_feature_images_error)
+                    api.get_image(&image_url, &image_name, &image_scale_name, &image_format)
+                        .map_err(&map_figma_api_error)
                 })
                 .and_then(|image_file_name| {
-                    renderer.render(View::ImageDownloaded(image_name.clone(), image_scale));
+                    renderer.render(View::ImageDownloaded(
+                        image_name.clone(),
+                        image_scale_name.clone(),
+                    ));
                     convert_image_to_webp_if_necessary(
                         &image_name,
-                        image_scale,
+                        &image_scale_name,
                         image_file_name,
                         image_format,
                         quality,
                         renderer,
                     )
                 })
-                .and_then(|image_file_name| {
+                .and_then(|image_temp_path| {
                     let res_path = &app_config.android.main_res;
-                    let drawable_folder = match image_scale {
-                        1f32 => "mdpi",
-                        1.5f32 => "hdpi",
-                        2f32 => "xhdpi",
-                        3f32 => "xxhdpi",
-                        4f32 => "xxxhdpi",
-                        _ => {
-                            return Err(FeatureImagesError {
-                                message: String::new(),
-                                cause: String::new(),
-                            })
-                        }
-                    };
+                    let full_final_image_dir =
+                        format!("{}/drawable-{}", &res_path, &image_scale_name);
+                    create_dir(&full_final_image_dir)
+                        .map_err(&map_fileutils_error)
+                        .map(|()| (image_temp_path, full_final_image_dir))
+                })
+                .and_then(|(image_temp_path, full_final_image_dir)| {
+                    let extension = image_format.extension();
+                    let full_final_image_path =
+                        format!("{}/{}.{}", full_final_image_dir, &image_name, &extension);
+                    move_file(&image_temp_path, &full_final_image_path)
+                        .map_err(&map_fileutils_error)
+                })
+                .and_then(|()| {
+                    println!("KEK");
+                    renderer.render(View::ImageExported(
+                        image_name.clone(),
+                        image_scale_name.clone(),
+                    ));
                     renderer.new_line();
                     Ok(())
                 });
@@ -214,7 +240,14 @@ fn export_image(
     }
 }
 
-fn to_feature_images_error(e: FigmaApiError) -> FeatureImagesError {
+fn map_figma_api_error(e: FigmaApiError) -> FeatureImagesError {
+    FeatureImagesError {
+        message: e.message,
+        cause: e.cause,
+    }
+}
+
+fn map_fileutils_error(e: FileUtilsError) -> FeatureImagesError {
     FeatureImagesError {
         message: e.message,
         cause: e.cause,
@@ -223,7 +256,7 @@ fn to_feature_images_error(e: FigmaApiError) -> FeatureImagesError {
 
 fn convert_image_to_webp_if_necessary(
     image_name: &String,
-    image_scale: f32,
+    image_scale_name: &String,
     image_file_name: String,
     image_format: &ImageFormat,
     quality: f32,
@@ -231,10 +264,16 @@ fn convert_image_to_webp_if_necessary(
 ) -> Result<String, FeatureImagesError> {
     match image_format {
         ImageFormat::Webp => {
-            renderer.render(View::ConvertingToWebp(image_name.clone(), image_scale));
+            renderer.render(View::ConvertingToWebp(
+                image_name.clone(),
+                image_scale_name.clone(),
+            ));
             match webp::image_to_webp(&image_file_name, quality) {
                 Some(new_image_path) => {
-                    renderer.render(View::ConvertedToWebp(image_name.clone(), image_scale));
+                    renderer.render(View::ConvertedToWebp(
+                        image_name.clone(),
+                        image_scale_name.clone(),
+                    ));
                     Ok(new_image_path)
                 }
                 None => Err(FeatureImagesError {
