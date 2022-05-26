@@ -13,8 +13,8 @@ fn main() {
     let args = Args::parse();
     match args.subcommand {
         Command::Config {
-            new_config_filename: path,
-        } => feature_config::create_default_config(&path),
+            new_config_filename,
+        } => feature_config::create_default_config(&new_config_filename),
         Command::Images {
             names,
             path_to_config,
