@@ -12,7 +12,9 @@ use crate::models::entrypoint::{Args, Command};
 fn main() {
     let args = Args::parse();
     match args.subcommand {
-        Command::Config { path } => feature_config::create_default_config(&path),
+        Command::Config {
+            new_config_filename: path,
+        } => feature_config::create_default_config(&path),
         Command::Images {
             names,
             path_to_config,

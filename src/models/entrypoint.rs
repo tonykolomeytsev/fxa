@@ -26,6 +26,6 @@ pub enum Command {
     Config {
         /// New config filename
         #[clap(default_value_t = String::from("fxn_default_config.yaml"))]
-        path: String,
+        new_config_filename: String,
     },
 }
