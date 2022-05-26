@@ -26,7 +26,6 @@ impl fmt::Display for FeatureImagesError {
 impl ImageFormat {
     fn extension(&self) -> String {
         match &self {
-            ImageFormat::Jpeg => "jpeg".to_string(),
             ImageFormat::Png => "png".to_string(),
             ImageFormat::Svg => "svg".to_string(),
             ImageFormat::Webp => "webp".to_string(),

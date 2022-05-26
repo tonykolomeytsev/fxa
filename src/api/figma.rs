@@ -38,7 +38,6 @@ impl fmt::Display for FigmaApiError {
 impl ImageFormat {
     fn as_download_extension(&self) -> String {
         match self {
-            ImageFormat::Jpeg => ".jpeg".to_string(),
             ImageFormat::Png => ".png".to_string(),
             ImageFormat::Svg => ".svg".to_string(),
             ImageFormat::Webp => ".png".to_string(),

@@ -14,8 +14,12 @@ use std::fs::File;
 /// android:
 ///     mainRes: "./main/res"
 ///     images:
-///         scales: [1, 1.5, 2, 3]
-///         format: png | webp
+///         scales:
+///             mdpi: 1.0
+///             hdpi: 1.5
+///             xhdpi: 2.0
+///             xxhdpi: 3.0
+///         format: svg | png | webp
 ///         webpOptions:
 ///             quality: 0..100
 /// ```
@@ -67,7 +71,11 @@ pub struct CommonImagesConfig {
 /// android:
 ///     mainRes: "./main/res"
 ///     images:
-///         scales: [1, 1.5, 2, 3]
+///         scales:
+///             mdpi: 1.0
+///             hdpi: 1.5
+///             xhdpi: 2.0
+///             xxhdpi: 3.0
 ///         format: png | webp
 ///         webpOptions:
 ///             quality: 0..100
@@ -76,13 +84,26 @@ pub struct CommonImagesConfig {
 #[serde(rename_all = "camelCase")]
 pub struct AndroidConfig {
     pub main_res: String,
+    #[serde(default = "default_android_images_config")]
     pub images: AndroidImagesConfig,
+}
+
+fn default_android_images_config() -> AndroidImagesConfig {
+    AndroidImagesConfig {
+        scales: default_scales(),
+        format: default_format(),
+        webp_options: default_webp_options(),
+    }
 }
 
 /// Part of App config from YAML:
 /// ```yaml
 /// images:
-///     scales: [1, 1.5, 2, 3]
+///     scales:
+///         mdpi: 1.0
+///         hdpi: 1.5
+///         xhdpi: 2.0
+///         xxhdpi: 3.0
 ///     format: png | webp
 ///     webpOptions:
 ///         quality: 0..100
@@ -90,15 +111,37 @@ pub struct AndroidConfig {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AndroidImagesConfig {
+    #[serde(default = "default_scales")]
     pub scales: HashMap<String, f32>,
+    #[serde(default = "default_format")]
     pub format: ImageFormat,
+    #[serde(default = "default_webp_options")]
     pub webp_options: AndroidImagesWebpConfig,
+}
+
+fn default_scales() -> HashMap<String, f32> {
+    [
+        ("mdpi", 1.0f32),
+        ("hdpi", 1.5f32),
+        ("xhdpi", 2.0f32),
+        ("xxhdpi", 3.0f32),
+    ]
+    .into_iter()
+    .map(|(k, v)| (k.to_string(), v))
+    .collect()
+}
+
+fn default_format() -> ImageFormat {
+    ImageFormat::Webp
+}
+
+fn default_webp_options() -> AndroidImagesWebpConfig {
+    AndroidImagesWebpConfig { quality: 85f32 }
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ImageFormat {
-    Jpeg,
     Webp,
     Png,
     Svg,

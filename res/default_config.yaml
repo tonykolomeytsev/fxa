@@ -13,7 +13,7 @@ android:
   # Relative or absolute path to the `main/res` folder of your android project.
   mainRes: ./app/src/main/res
   images:
-    # [Optional] An array of asset scales that should be downloaded.
+    # [Optional] An array of asset scales that should be downloaded. Default value is presented below
     scales:
       mdpi: 1.0
       hdpi: 1.5
