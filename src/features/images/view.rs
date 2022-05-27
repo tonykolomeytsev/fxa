@@ -1,8 +1,6 @@
 use crossterm::style::Stylize;
 
-use crate::common::renderer::Renderer;
-
-pub struct FeatureImagesRenderer();
+use crate::common::renderer::Renderable;
 
 pub enum View {
     ReadingConfig { path: String },
@@ -21,9 +19,9 @@ pub enum View {
     Done { message: Option<String> },
 }
 
-impl Renderer<View> for FeatureImagesRenderer {
-    fn render_internal(&mut self, view: View) -> String {
-        match view {
+impl Renderable for View {
+    fn render(self) -> String {
+        match self {
             View::ReadingConfig { path } => format!(
                 "     {} config from file {}\n",
                 "Loading".bold().cyan(),

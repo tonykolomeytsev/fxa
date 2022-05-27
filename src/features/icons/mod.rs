@@ -1,4 +1,4 @@
 pub mod icons;
-pub mod renderer;
+pub mod view;
 
 pub use icons::export_icons;

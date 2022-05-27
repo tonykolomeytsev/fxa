@@ -1,17 +1,15 @@
 use crossterm::style::Stylize;
 
-use crate::common::renderer::Renderer;
-
-pub struct FeatureConfigRenderer();
+use crate::common::renderer::Renderable;
 
 pub enum View {
     Error { description: String },
     Done { message: String },
 }
 
-impl Renderer<View> for FeatureConfigRenderer {
-    fn render_internal(&mut self, view: View) -> String {
-        match view {
+impl Renderable for View {
+    fn render(self) -> String {
+        match self {
             View::Error { description } => {
                 format!("       {} {}\n", "Error".bold().red(), &description)
             }

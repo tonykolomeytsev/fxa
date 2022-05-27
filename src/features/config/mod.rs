@@ -1,4 +1,4 @@
 pub mod config;
-pub mod renderer;
+pub mod view;
 
 pub use config::create_default_config;

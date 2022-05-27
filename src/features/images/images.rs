@@ -8,7 +8,7 @@ use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
 use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
 use crate::common::renderer::Renderer;
 use crate::common::webp;
-use crate::feature_images::renderer::{FeatureImagesRenderer, View};
+use crate::feature_images::view::View;
 use crate::models::config::{AppConfig, ImageFormat, LoadAppConfigError};
 use crate::models::figma::{Document, Frame};
 
@@ -39,7 +39,7 @@ impl ImageFormat {
 }
 
 pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: &String) {
-    let mut renderer = FeatureImagesRenderer();
+    let renderer = Renderer();
     renderer.new_line();
     // Read app config
     renderer.render(View::ReadingConfig {
@@ -86,7 +86,7 @@ pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: 
                         &scale_name,
                         *scale_value,
                         &images_table,
-                        &mut renderer,
+                        &renderer,
                     );
                 });
             }
@@ -170,7 +170,7 @@ fn export_image(
     image_scale_name: &String,
     image_scale_value: f32,
     images_table: &HashMap<String, String>,
-    renderer: &mut FeatureImagesRenderer,
+    renderer: &Renderer,
 ) {
     let file_id = &app_config.figma.file_id;
     let frame_name = &app_config.common.images.figma_frame_name;
@@ -201,7 +201,7 @@ fn export_image(
                         image_file_name,
                         image_format,
                         quality,
-                        renderer,
+                        &renderer,
                     )
                 })
                 .and_then(|image_temp_path| {
@@ -278,7 +278,7 @@ fn convert_image_to_webp_if_necessary(
     image_file_name: String,
     image_format: &ImageFormat,
     quality: f32,
-    renderer: &mut FeatureImagesRenderer,
+    renderer: &Renderer,
 ) -> Result<String, FeatureImagesError> {
     match image_format {
         ImageFormat::Webp => {

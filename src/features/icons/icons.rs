@@ -7,7 +7,7 @@ use reqwest::blocking::Client;
 use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
 use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
 use crate::common::renderer::Renderer;
-use crate::feature_icons::renderer::{FeatureIconsRenderer, View};
+use crate::feature_icons::view::View;
 use crate::models::config::{AppConfig, ImageFormat};
 use crate::models::figma::{Document, Frame};
 
@@ -24,7 +24,7 @@ impl fmt::Display for FeatureIconsError {
 }
 
 pub fn export_icons(token: &String, image_names: &Vec<String>, path_to_config: &String) {
-    let mut renderer = FeatureIconsRenderer();
+    let renderer = Renderer();
     renderer.new_line();
     // Read app config
     renderer.render(View::ReadingConfig {
@@ -65,7 +65,7 @@ pub fn export_icons(token: &String, image_names: &Vec<String>, path_to_config: &
             renderer.new_line();
             for image_name in image_names {
                 renderer.render(View::FetchingIcon(image_name.clone()));
-                export_icon(&api, &app_config, &image_name, &images_table, &mut renderer);
+                export_icon(&api, &app_config, &image_name, &images_table, &renderer);
             }
             Ok(images_table)
         });
@@ -148,7 +148,7 @@ fn export_icon(
     app_config: &AppConfig,
     image_name: &String,
     images_table: &HashMap<String, String>,
-    renderer: &mut FeatureIconsRenderer,
+    renderer: &Renderer,
 ) {
     let file_id = &app_config.figma.file_id;
     let frame_name = &app_config.common.images.figma_frame_name;
