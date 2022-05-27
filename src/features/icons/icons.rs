@@ -6,6 +6,7 @@ use reqwest::blocking::Client;
 
 use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
 use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
+use crate::common::renderer::Renderer;
 use crate::feature_icons::renderer::{FeatureIconsRenderer, View};
 use crate::models::config::{AppConfig, ImageFormat};
 use crate::models::figma::{Document, Frame};
@@ -23,7 +24,7 @@ impl fmt::Display for FeatureIconsError {
 }
 
 pub fn export_icons(token: &String, image_names: &Vec<String>, path_to_config: &String) {
-    let mut renderer = FeatureIconsRenderer::new();
+    let mut renderer = FeatureIconsRenderer();
     renderer.new_line();
     // Read app config
     renderer.render(View::ReadingConfig {

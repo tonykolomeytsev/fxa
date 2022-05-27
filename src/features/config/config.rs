@@ -3,6 +3,7 @@ use std::fs;
 use std::io::BufWriter;
 use std::io::Write;
 
+use crate::common::renderer::Renderer;
 use crate::feature_config::renderer::{FeatureConfigRenderer, View};
 
 #[derive(Debug)]
@@ -40,7 +41,7 @@ pub fn create_default_config(path: &String) {
             Err(ConfigFeatureError { message, cause })
         }
     };
-    let mut renderer = FeatureConfigRenderer::new();
+    let mut renderer = FeatureConfigRenderer();
     renderer.new_line();
     match result {
         Ok(()) => renderer.render(View::Done {

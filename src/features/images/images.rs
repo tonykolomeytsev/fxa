@@ -6,6 +6,7 @@ use reqwest::blocking::Client;
 
 use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
 use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
+use crate::common::renderer::Renderer;
 use crate::common::webp;
 use crate::feature_images::renderer::{FeatureImagesRenderer, View};
 use crate::models::config::{AppConfig, ImageFormat, LoadAppConfigError};
@@ -38,7 +39,7 @@ impl ImageFormat {
 }
 
 pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: &String) {
-    let mut renderer = FeatureImagesRenderer::new();
+    let mut renderer = FeatureImagesRenderer();
     renderer.new_line();
     // Read app config
     renderer.render(View::ReadingConfig {
