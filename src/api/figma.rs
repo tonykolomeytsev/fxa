@@ -1,15 +1,17 @@
-use crate::common::fileutils::{create_temp_dir, TEMP_DIR_PATH};
+use crate::common::fileutils::{create_temp_dir, FileUtilsError, TEMP_DIR_PATH};
 use crate::models::config::ImageFormat;
 use crate::models::figma::Document;
 use reqwest::{
     blocking::{Client, Response},
     Error, StatusCode,
 };
-use serde::Deserialize;
-use std::fs;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+use std::fs::{self, File};
+use std::io::BufReader;
 use std::{collections::HashMap, fmt};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct FigmaGetFileResponse {
     document: Document,
 }
@@ -35,6 +37,10 @@ impl fmt::Display for FigmaApiError {
     }
 }
 
+trait IntoFigmaApiError {
+    fn map(self) -> FigmaApiError;
+}
+
 impl ImageFormat {
     fn as_download_extension(&self) -> String {
         match self {
@@ -54,18 +60,25 @@ impl FigmaApi {
     }
 
     pub fn get_document(&self, file_id: &String) -> Result<Document, FigmaApiError> {
-        let url = format!("{}{}", FIGMA_FILES_ENDPOINT, &file_id);
-        let response = self.client.get(&url).send();
-        match_response_internal(response, &url, |response| {
-            match response.json::<FigmaGetFileResponse>() {
-                Ok(response) => Ok(response.document),
-                Err(e) => {
-                    let message = format!("while parsing json response from {}", &url);
-                    let cause = format!("{}", e);
-                    Err(FigmaApiError { message, cause })
-                }
-            }
-        })
+        load_from_cache::<FigmaGetFileResponse>(&file_id)
+            .map(|response| response.document)
+            .or_else(|_| {
+                let url = format!("{}{}", FIGMA_FILES_ENDPOINT, &file_id);
+                let response = self.client.get(&url).send();
+                match_response_internal(response, &url, |response| {
+                    match response.json::<FigmaGetFileResponse>() {
+                        Ok(response) => {
+                            save_to_cache(&response, &file_id).unwrap_or_default();
+                            Ok(response.document)
+                        }
+                        Err(e) => {
+                            let message = format!("while parsing json response from {}", &url);
+                            let cause = format!("{}", e);
+                            Err(FigmaApiError { message, cause })
+                        }
+                    }
+                })
+            })
     }
 
     pub fn get_image_download_url(
@@ -113,14 +126,7 @@ impl FigmaApi {
                     let cause = format!("{}", e);
                     FigmaApiError { message, cause }
                 })
-                .and_then(|bytes| {
-                    create_temp_dir()
-                        .map_err(|e| FigmaApiError {
-                            message: e.message,
-                            cause: e.cause,
-                        })
-                        .map(|()| bytes)
-                })
+                .and_then(|bytes| create_temp_dir().map_err(|e| e.map()).map(|()| bytes))
                 .and_then(|bytes| {
                     let image_file_name = format!(
                         "{}/{}_{}{}",
@@ -165,6 +171,55 @@ where
                 .to_string();
             let cause = format!("{}\n{}", e, recomendation);
             Err(FigmaApiError { message, cause })
+        }
+    }
+}
+
+fn load_from_cache<T: DeserializeOwned>(id: &String) -> Result<T, FigmaApiError> {
+    let file_name = format!(".fxn/cache_{}.json", &id);
+    File::open(&file_name)
+        .map_err(|e| e.map())
+        .map(|file| BufReader::new(file))
+        .map(|it| serde_json::from_reader(it).unwrap())
+}
+
+fn save_to_cache<T: Serialize>(value: T, id: &String) -> Result<(), FigmaApiError> {
+    let file_name = format!(".fxn/cache_{}.json", &id);
+    match create_temp_dir() {
+        Ok(()) => match File::create(&file_name).map(|it| serde_json::to_writer(&it, &value)) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(FigmaApiError {
+                message: format!("while wrong writing in cache file {}", &file_name),
+                cause: format!("{}", &e),
+            }),
+        },
+        Err(e) => Err(e.map()),
+    }
+}
+
+impl IntoFigmaApiError for FileUtilsError {
+    fn map(self) -> FigmaApiError {
+        FigmaApiError {
+            message: self.message,
+            cause: self.cause,
+        }
+    }
+}
+
+impl IntoFigmaApiError for std::io::Error {
+    fn map(self) -> FigmaApiError {
+        FigmaApiError {
+            message: format!("{}", self),
+            cause: String::new(),
+        }
+    }
+}
+
+impl IntoFigmaApiError for serde_json::Error {
+    fn map(self) -> FigmaApiError {
+        FigmaApiError {
+            message: format!("{}", self),
+            cause: String::new(),
         }
     }
 }

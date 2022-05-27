@@ -8,7 +8,7 @@ use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
 use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
 use crate::common::webp;
 use crate::feature_images::renderer::{FeatureImagesRenderer, View};
-use crate::models::config::{AppConfig, ImageFormat};
+use crate::models::config::{AppConfig, ImageFormat, LoadAppConfigError};
 use crate::models::figma::{Document, Frame};
 
 #[derive(Debug)]
@@ -21,6 +21,10 @@ impl fmt::Display for FeatureImagesError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}\nCaused by: {}", &self.message, &self.cause)
     }
+}
+
+trait IntoFeatureImagesError {
+    fn map(self) -> FeatureImagesError;
 }
 
 impl ImageFormat {
@@ -43,10 +47,7 @@ pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: 
     let api = FigmaApi::new(create_http_client(&token));
     let mut url = String::new();
     let result = AppConfig::from_file(path_to_config)
-        .map_err(|e| FeatureImagesError {
-            message: e.message,
-            cause: e.cause,
-        })
+        .map_err(|e| e.map())
         .map(|app_config| {
             renderer.render(View::ReceivedConfig {
                 path: path_to_config.clone(),
@@ -111,13 +112,10 @@ fn create_http_client(token: &String) -> Client {
 
 fn fetch_dom(api: &FigmaApi, app_config: &AppConfig) -> Result<Document, FeatureImagesError> {
     let file_id = &app_config.figma.file_id;
-    api.get_document(&file_id).map_err(|e| FeatureImagesError {
-        message: e.message,
-        cause: e.cause,
-    })
+    api.get_document(&file_id).map_err(|e| e.map())
 }
 
-fn find_images_frame<'a>(
+fn find_images_frame(
     document: Document,
     app_config: AppConfig,
 ) -> Result<(AppConfig, HashMap<String, String>), FeatureImagesError> {
@@ -175,7 +173,7 @@ fn export_image(
         Some(node_id) => {
             let result = api
                 .get_image_download_url(file_id, node_id, image_scale_value)
-                .map_err(&map_figma_api_error)
+                .map_err(|e| e.map())
                 .and_then(|image_url| {
                     renderer.render(View::DownloadingImage(
                         image_name.clone(),
@@ -183,7 +181,7 @@ fn export_image(
                     ));
                     let image_format = &app_config.android.images.format;
                     api.get_image(&image_url, &image_name, &image_scale_name, &image_format)
-                        .map_err(&map_figma_api_error)
+                        .map_err(|e| e.map())
                 })
                 .and_then(|image_file_name| {
                     renderer.render(View::ImageDownloaded(
@@ -204,15 +202,14 @@ fn export_image(
                     let full_final_image_dir =
                         format!("{}/drawable-{}", &res_path, &image_scale_name);
                     create_dir(&full_final_image_dir)
-                        .map_err(&map_fileutils_error)
+                        .map_err(|e| e.map())
                         .map(|()| (image_temp_path, full_final_image_dir))
                 })
                 .and_then(|(image_temp_path, full_final_image_dir)| {
                     let extension = image_format.extension();
                     let full_final_image_path =
                         format!("{}/{}.{}", full_final_image_dir, &image_name, &extension);
-                    move_file(&image_temp_path, &full_final_image_path)
-                        .map_err(&map_fileutils_error)
+                    move_file(&image_temp_path, &full_final_image_path).map_err(|e| e.map())
                 })
                 .and_then(|()| {
                     renderer.render(View::ImageExported(
@@ -241,17 +238,30 @@ fn export_image(
     }
 }
 
-fn map_figma_api_error(e: FigmaApiError) -> FeatureImagesError {
-    FeatureImagesError {
-        message: e.message,
-        cause: e.cause,
+impl IntoFeatureImagesError for LoadAppConfigError {
+    fn map(self) -> FeatureImagesError {
+        FeatureImagesError {
+            message: self.message,
+            cause: self.cause,
+        }
     }
 }
 
-fn map_fileutils_error(e: FileUtilsError) -> FeatureImagesError {
-    FeatureImagesError {
-        message: e.message,
-        cause: e.cause,
+impl IntoFeatureImagesError for FigmaApiError {
+    fn map(self) -> FeatureImagesError {
+        FeatureImagesError {
+            message: self.message,
+            cause: self.cause,
+        }
+    }
+}
+
+impl IntoFeatureImagesError for FileUtilsError {
+    fn map(self) -> FeatureImagesError {
+        FeatureImagesError {
+            message: self.message,
+            cause: self.cause,
+        }
     }
 }
 

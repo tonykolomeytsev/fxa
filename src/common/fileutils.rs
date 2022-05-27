@@ -21,6 +21,13 @@ pub fn create_temp_dir() -> Result<(), FileUtilsError> {
     })
 }
 
+pub fn remove_temp_dir() -> Result<(), FileUtilsError> {
+    fs::remove_dir_all(TEMP_DIR_PATH).map_err(|e| FileUtilsError {
+        message: "while removing temporary dir".to_string(),
+        cause: format!("{}", e),
+    })
+}
+
 pub fn create_dir(path: &String) -> Result<(), FileUtilsError> {
     fs::create_dir_all(path).map_err(|e| FileUtilsError {
         message: format!("while creating dir {}", &path),
