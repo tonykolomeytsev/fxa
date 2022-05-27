@@ -22,6 +22,14 @@ pub enum Command {
         #[clap(short = 'c', long = "config")]
         path_to_config: String,
     },
+    /// Export vector icons from Figma
+    Icons {
+        /// Space separated images names
+        names: Vec<String>,
+        /// Path to yaml config. Use `fxn config` to generate default config here
+        #[clap(short = 'c', long = "config")]
+        path_to_config: String,
+    },
     /// Generate default yaml config here
     Config {
         /// New config filename

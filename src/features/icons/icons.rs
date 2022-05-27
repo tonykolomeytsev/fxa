@@ -6,35 +6,24 @@ use reqwest::blocking::Client;
 
 use crate::api::figma::{FigmaApi, FigmaApiError, FIGMA_FILES_ENDPOINT};
 use crate::common::fileutils::{create_dir, move_file, FileUtilsError};
-use crate::common::webp;
-use crate::feature_images::renderer::{FeatureImagesRenderer, View};
+use crate::feature_icons::renderer::{FeatureIconsRenderer, View};
 use crate::models::config::{AppConfig, ImageFormat};
 use crate::models::figma::{Document, Frame};
 
 #[derive(Debug)]
-pub struct FeatureImagesError {
+pub struct FeatureIconsError {
     pub message: String,
     pub cause: String,
 }
 
-impl fmt::Display for FeatureImagesError {
+impl fmt::Display for FeatureIconsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}\nCaused by: {}", &self.message, &self.cause)
     }
 }
 
-impl ImageFormat {
-    fn extension(&self) -> String {
-        match &self {
-            ImageFormat::Png => "png".to_string(),
-            ImageFormat::Svg => "svg".to_string(),
-            ImageFormat::Webp => "webp".to_string(),
-        }
-    }
-}
-
-pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: &String) {
-    let mut renderer = FeatureImagesRenderer::new();
+pub fn export_icons(token: &String, image_names: &Vec<String>, path_to_config: &String) {
+    let mut renderer = FeatureIconsRenderer::new();
     renderer.new_line();
     // Read app config
     renderer.render(View::ReadingConfig {
@@ -43,7 +32,7 @@ pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: 
     let api = FigmaApi::new(create_http_client(&token));
     let mut url = String::new();
     let result = AppConfig::from_file(path_to_config)
-        .map_err(|e| FeatureImagesError {
+        .map_err(|e| FeatureIconsError {
             message: e.message,
             cause: e.cause,
         })
@@ -66,24 +55,13 @@ pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: 
             find_images_frame(doc, app_config)
         })
         .and_then(|(app_config, images_table)| {
-            renderer.render(View::FoundImages(
+            renderer.render(View::FoundIcons(
                 app_config.common.images.figma_frame_name.clone(),
             ));
             renderer.new_line();
-            let image_scales = &app_config.android.images.scales;
             for image_name in image_names {
-                image_scales.iter().for_each(|(scale_name, scale_value)| {
-                    renderer.render(View::FetchingImage(image_name.clone(), scale_name.clone()));
-                    export_image(
-                        &api,
-                        &app_config,
-                        &image_name,
-                        &scale_name,
-                        *scale_value,
-                        &images_table,
-                        &mut renderer,
-                    );
-                });
+                renderer.render(View::FetchingIcon(image_name.clone()));
+                export_icon(&api, &app_config, &image_name, &images_table, &mut renderer);
             }
             Ok(images_table)
         });
@@ -109,9 +87,9 @@ fn create_http_client(token: &String) -> Client {
         .unwrap()
 }
 
-fn fetch_dom(api: &FigmaApi, app_config: &AppConfig) -> Result<Document, FeatureImagesError> {
+fn fetch_dom(api: &FigmaApi, app_config: &AppConfig) -> Result<Document, FeatureIconsError> {
     let file_id = &app_config.figma.file_id;
-    api.get_document(&file_id).map_err(|e| FeatureImagesError {
+    api.get_document(&file_id).map_err(|e| FeatureIconsError {
         message: e.message,
         cause: e.cause,
     })
@@ -120,7 +98,7 @@ fn fetch_dom(api: &FigmaApi, app_config: &AppConfig) -> Result<Document, Feature
 fn find_images_frame<'a>(
     document: Document,
     app_config: AppConfig,
-) -> Result<(AppConfig, HashMap<String, String>), FeatureImagesError> {
+) -> Result<(AppConfig, HashMap<String, String>), FeatureIconsError> {
     let frame = document
         .children
         .iter()
@@ -141,7 +119,7 @@ fn find_images_frame<'a>(
             &app_config.common.images.figma_frame_name
         );
         let cause = "Make sure such a frame exists".to_string();
-        Err(FeatureImagesError { message, cause })
+        Err(FeatureIconsError { message, cause })
     }
 }
 
@@ -158,67 +136,41 @@ fn map_images_name_to_id(frame: &Frame) -> HashMap<String, String> {
     hash_map
 }
 
-fn export_image(
+fn export_icon(
     api: &FigmaApi,
     app_config: &AppConfig,
     image_name: &String,
-    image_scale_name: &String,
-    image_scale_value: f32,
     images_table: &HashMap<String, String>,
-    renderer: &mut FeatureImagesRenderer,
+    renderer: &mut FeatureIconsRenderer,
 ) {
     let file_id = &app_config.figma.file_id;
     let frame_name = &app_config.common.images.figma_frame_name;
-    let image_format = &app_config.android.images.format;
-    let quality = app_config.android.images.webp_options.quality;
     match images_table.get(image_name) {
         Some(node_id) => {
             let result = api
-                .get_image_download_url(file_id, node_id, image_scale_value)
+                .get_image_download_url(file_id, node_id, 1.0f32)
                 .map_err(&map_figma_api_error)
                 .and_then(|image_url| {
-                    renderer.render(View::DownloadingImage(
-                        image_name.clone(),
-                        image_scale_name.clone(),
-                    ));
-                    let image_format = &app_config.android.images.format;
-                    api.get_image(&image_url, &image_name, &image_scale_name, &image_format)
+                    renderer.render(View::DownloadingIcon(image_name.clone()));
+                    api.get_image(&image_url, &image_name, &String::new(), &ImageFormat::Svg)
                         .map_err(&map_figma_api_error)
                 })
-                .and_then(|image_file_name| {
-                    renderer.render(View::ImageDownloaded(
-                        image_name.clone(),
-                        image_scale_name.clone(),
-                    ));
-                    convert_image_to_webp_if_necessary(
-                        &image_name,
-                        &image_scale_name,
-                        image_file_name,
-                        image_format,
-                        quality,
-                        renderer,
-                    )
-                })
                 .and_then(|image_temp_path| {
+                    renderer.render(View::IconDownloaded(image_name.clone()));
                     let res_path = &app_config.android.main_res;
-                    let full_final_image_dir =
-                        format!("{}/drawable-{}", &res_path, &image_scale_name);
+                    let full_final_image_dir = format!("{}/drawable", &res_path);
                     create_dir(&full_final_image_dir)
                         .map_err(&map_fileutils_error)
                         .map(|()| (image_temp_path, full_final_image_dir))
                 })
                 .and_then(|(image_temp_path, full_final_image_dir)| {
-                    let extension = image_format.extension();
                     let full_final_image_path =
-                        format!("{}/{}.{}", full_final_image_dir, &image_name, &extension);
+                        format!("{}/{}.svg", full_final_image_dir, &image_name);
                     move_file(&image_temp_path, &full_final_image_path)
                         .map_err(&map_fileutils_error)
                 })
                 .and_then(|()| {
-                    renderer.render(View::ImageExported(
-                        image_name.clone(),
-                        image_scale_name.clone(),
-                    ));
+                    renderer.render(View::IconExported(image_name.clone()));
                     renderer.new_line();
                     Ok(())
                 });
@@ -232,7 +184,7 @@ fn export_image(
         None => {
             renderer.render(View::Error {
                 description: format!(
-                    "occurred because an image `{}` is missing in frame `{}`",
+                    "occurred because an icon `{}` is missing in frame `{}`",
                     &image_name, &frame_name
                 ),
             });
@@ -241,48 +193,16 @@ fn export_image(
     }
 }
 
-fn map_figma_api_error(e: FigmaApiError) -> FeatureImagesError {
-    FeatureImagesError {
+fn map_figma_api_error(e: FigmaApiError) -> FeatureIconsError {
+    FeatureIconsError {
         message: e.message,
         cause: e.cause,
     }
 }
 
-fn map_fileutils_error(e: FileUtilsError) -> FeatureImagesError {
-    FeatureImagesError {
+fn map_fileutils_error(e: FileUtilsError) -> FeatureIconsError {
+    FeatureIconsError {
         message: e.message,
         cause: e.cause,
-    }
-}
-
-fn convert_image_to_webp_if_necessary(
-    image_name: &String,
-    image_scale_name: &String,
-    image_file_name: String,
-    image_format: &ImageFormat,
-    quality: f32,
-    renderer: &mut FeatureImagesRenderer,
-) -> Result<String, FeatureImagesError> {
-    match image_format {
-        ImageFormat::Webp => {
-            renderer.render(View::ConvertingToWebp(
-                image_name.clone(),
-                image_scale_name.clone(),
-            ));
-            match webp::image_to_webp(&image_file_name, quality) {
-                Some(new_image_path) => {
-                    renderer.render(View::ConvertedToWebp(
-                        image_name.clone(),
-                        image_scale_name.clone(),
-                    ));
-                    Ok(new_image_path)
-                }
-                None => Err(FeatureImagesError {
-                    message: "while converting PNG to WEBP".to_string(),
-                    cause: "something went wrong in webp module".to_string(),
-                }),
-            }
-        }
-        _ => Ok(image_file_name),
     }
 }
