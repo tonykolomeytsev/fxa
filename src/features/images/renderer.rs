@@ -14,7 +14,7 @@ pub enum View {
     ReadingConfig { path: String },
     ReceivedConfig { path: String },
     FetchingDom { url: String },
-    DomFetched { url: String },
+    DomFetched { url: String, from_cache: bool },
     ProcessingDom,
     FoundImages(String),
     FetchingImage(String, String),
@@ -55,11 +55,11 @@ impl FeatureImagesRenderer {
                     &url,
                 )
             }),
-            View::DomFetched { url } => self.apply(|| {
+            View::DomFetched { url, from_cache } => self.apply(|| {
                 format!(
                     "     {} figma file nodes from {}\n",
                     "Fetched".bold().green(),
-                    &url,
+                    if !from_cache { &url } else { "cache" },
                 )
             }),
             View::ProcessingDom => self.apply(|| {

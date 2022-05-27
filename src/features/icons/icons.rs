@@ -46,10 +46,13 @@ pub fn export_icons(token: &String, image_names: &Vec<String>, path_to_config: &
         .and_then(|app_config| {
             renderer.new_line();
             renderer.render(View::FetchingDom { url: url.clone() });
-            fetch_dom(&api, &app_config).map(|doc| (app_config, doc))
+            fetch_dom(&api, &app_config).map(|(doc, from_cache)| (app_config, doc, from_cache))
         })
-        .and_then(|(app_config, doc)| {
-            renderer.render(View::DomFetched { url: url.clone() });
+        .and_then(|(app_config, doc, from_cache)| {
+            renderer.render(View::DomFetched {
+                url: url.clone(),
+                from_cache,
+            });
             renderer.new_line();
             renderer.render(View::ProcessingDom);
             find_images_frame(doc, app_config)
@@ -87,7 +90,10 @@ fn create_http_client(token: &String) -> Client {
         .unwrap()
 }
 
-fn fetch_dom(api: &FigmaApi, app_config: &AppConfig) -> Result<Document, FeatureIconsError> {
+fn fetch_dom(
+    api: &FigmaApi,
+    app_config: &AppConfig,
+) -> Result<(Document, bool), FeatureIconsError> {
     let file_id = &app_config.figma.file_id;
     api.get_document(&file_id).map_err(|e| FeatureIconsError {
         message: e.message,

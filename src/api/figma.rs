@@ -59,9 +59,9 @@ impl FigmaApi {
         Self { client }
     }
 
-    pub fn get_document(&self, file_id: &String) -> Result<Document, FigmaApiError> {
+    pub fn get_document(&self, file_id: &String) -> Result<(Document, bool), FigmaApiError> {
         load_from_cache::<FigmaGetFileResponse>(&file_id)
-            .map(|response| response.document)
+            .map(|response| (response.document, true))
             .or_else(|_| {
                 let url = format!("{}{}", FIGMA_FILES_ENDPOINT, &file_id);
                 let response = self.client.get(&url).send();
@@ -69,7 +69,7 @@ impl FigmaApi {
                     match response.json::<FigmaGetFileResponse>() {
                         Ok(response) => {
                             save_to_cache(&response, &file_id).unwrap_or_default();
-                            Ok(response.document)
+                            Ok((response.document, false))
                         }
                         Err(e) => {
                             let message = format!("while parsing json response from {}", &url);
