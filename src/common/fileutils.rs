@@ -1,4 +1,4 @@
-use std::{fmt, fs};
+use std::{fmt, fs, path::Path};
 
 pub const TEMP_DIR_PATH: &str = ".fxn";
 
@@ -22,10 +22,14 @@ pub fn create_temp_dir() -> Result<(), FileUtilsError> {
 }
 
 pub fn remove_temp_dir() -> Result<(), FileUtilsError> {
-    fs::remove_dir_all(TEMP_DIR_PATH).map_err(|e| FileUtilsError {
-        message: "while removing temporary dir".to_string(),
-        cause: format!("{}", e),
-    })
+    if Path::new(TEMP_DIR_PATH).exists() {
+        fs::remove_dir_all(TEMP_DIR_PATH).map_err(|e| FileUtilsError {
+            message: "while removing temporary dir".to_string(),
+            cause: format!("{}", e),
+        })
+    } else {
+        Ok(())
+    }
 }
 
 pub fn create_dir(path: &String) -> Result<(), FileUtilsError> {
