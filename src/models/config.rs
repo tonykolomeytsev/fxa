@@ -140,7 +140,7 @@ fn default_webp_options() -> AndroidImagesWebpConfig {
     AndroidImagesWebpConfig { quality: 85f32 }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub enum ImageFormat {
     Webp,

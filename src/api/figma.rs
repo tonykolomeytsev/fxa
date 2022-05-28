@@ -29,9 +29,9 @@ pub struct FigmaApi {
 impl ImageFormat {
     fn as_download_extension(&self) -> String {
         match self {
-            ImageFormat::Png => ".png".to_string(),
-            ImageFormat::Svg => ".svg".to_string(),
-            ImageFormat::Webp => ".png".to_string(),
+            ImageFormat::Png => "png".to_string(),
+            ImageFormat::Svg => "svg".to_string(),
+            ImageFormat::Webp => "png".to_string(),
         }
     }
 }
@@ -71,6 +71,7 @@ impl FigmaApi {
         file_id: &String,
         node_id: &String,
         scale: f32,
+        format: &ImageFormat,
     ) -> Result<String, CommonError> {
         let url = format!("{}{}", FIGMA_IMAGES_ENDPOINT, &file_id);
         let response = self
@@ -78,7 +79,7 @@ impl FigmaApi {
             .get(&url)
             .query(&[("ids", node_id.clone())])
             .query(&[("scale", scale)])
-            .query(&[("format", "png")])
+            .query(&[("format", format.as_download_extension())])
             .send();
         match_response_internal(response, &url, |response| {
             match response.json::<FigmaGetImageResponse>() {
@@ -114,7 +115,7 @@ impl FigmaApi {
                 .and_then(|bytes| create_temp_dir().map(|()| bytes))
                 .and_then(|bytes| {
                     let image_file_name = format!(
-                        "{}/{}_{}{}",
+                        "{}/{}_{}.{}",
                         TEMP_DIR_PATH,
                         &image_name,
                         &image_scale_name,
