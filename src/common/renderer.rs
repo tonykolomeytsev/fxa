@@ -6,8 +6,26 @@ use crossterm::{
     QueueableCommand,
 };
 
+const INDENT_SIZE: usize = 12usize;
+
+pub trait Indentable {
+    fn indent(&self) -> String;
+}
+
+impl Indentable for &str {
+    fn indent(&self) -> String {
+        let len = self.len();
+        let indent = if len <= INDENT_SIZE {
+            INDENT_SIZE - len
+        } else {
+            0usize
+        };
+        format!("{:indent$}{}", "", &self, indent = indent)
+    }
+}
+
 pub trait Renderable {
-    fn render(self) -> String;
+    fn render(&self) -> String;
 }
 
 pub struct Renderer();
@@ -23,12 +41,13 @@ impl Renderer {
             .queue(terminal::Clear(ClearType::CurrentLine))
             .unwrap();
         stdout.write(view.render().as_bytes()).unwrap();
+        stdout.write(b"\n").unwrap();
         stdout.flush().unwrap();
     }
 
     pub fn new_line(&self) {
         let mut stdout = stdout();
-        stdout.write("\n".as_bytes()).unwrap();
+        stdout.write(b"\n").unwrap();
         stdout.flush().unwrap();
     }
 }

@@ -1,6 +1,6 @@
 use crossterm::style::Stylize;
 
-use crate::common::renderer::Renderable;
+use crate::common::renderer::{Indentable, Renderable};
 
 pub enum View {
     ReadingConfig { path: String },
@@ -20,82 +20,82 @@ pub enum View {
 }
 
 impl Renderable for View {
-    fn render(self) -> String {
+    fn render(&self) -> String {
         match self {
             View::ReadingConfig { path } => format!(
-                "     {} config from file {}\n",
-                "Loading".bold().cyan(),
+                "{} config from file {}",
+                "Loading".indent().bold().cyan(),
                 &path,
             ),
             View::ReceivedConfig { path } => format!(
-                "      {} config from file {}\n",
-                "Loaded".bold().green(),
+                "{} config from file {}",
+                "Loaded".indent().bold().green(),
                 &path,
             ),
             View::FetchingDom { url } => format!(
-                "    {} figma file nodes from {}\n",
-                "Fetching".bold().cyan(),
+                "{} figma file nodes from {}",
+                "Fetching".indent().bold().cyan(),
                 &url,
             ),
             View::DomFetched { url, from_cache } => format!(
-                "     {} figma file nodes from {}\n",
-                "Fetched".bold().green(),
+                "{} figma file nodes from {}",
+                "Fetched".indent().bold().green(),
                 if !from_cache { &url } else { "cache" },
             ),
             View::ProcessingDom => format!(
-                "  {} {}\n",
-                "Processing".bold().cyan(),
+                "{} {}",
+                "Processing".indent().bold().cyan(),
                 "figma file nodes..."
             ),
             View::FoundImages(frame_name) => format!(
-                "       {} figma frame `{}` with images\n",
-                "Found".bold().green(),
+                "{} figma frame `{}` with images",
+                "Found".indent().bold().green(),
                 &frame_name,
             ),
             View::FetchingImage(image_name, scale) => format!(
-                "    {} download url for image {} ({})\n",
-                "Fetching".bold().cyan(),
+                "{} download url for image {} ({})",
+                "Fetching".indent().bold().cyan(),
                 &image_name,
                 &scale,
             ),
             View::DownloadingImage(image_name, scale) => format!(
-                " {} image {} ({})\n",
-                "Downloading".bold().cyan(),
+                "{} image {} ({})",
+                "Downloading".indent().bold().cyan(),
                 &image_name,
                 &scale,
             ),
             View::ImageDownloaded(image_name, scale) => format!(
-                "  {} image {} ({})\n",
-                "Downloaded".bold().green(),
+                "  {} image {} ({})",
+                "Downloaded".indent().bold().green(),
                 &image_name,
                 &scale,
             ),
             View::ConvertingToWebp(image_name, scale) => format!(
-                "  {} to WEBP image {} ({})...\n",
-                "Converting".bold().cyan(),
+                "{} to WEBP image {} ({})...",
+                "Converting".indent().bold().cyan(),
                 &image_name,
                 &scale,
             ),
             View::ConvertedToWebp(image_name, scale) => format!(
-                "   {} to WEBP image {} ({})\n",
-                "Converted".bold().green(),
+                "{} to WEBP image {} ({})",
+                "Converted".indent().bold().green(),
                 &image_name,
                 &scale,
             ),
             View::ImageExported(image_name, scale) => format!(
-                "    {} image {} ({})\n",
-                "Exported".bold().green(),
+                "{} image {} ({})",
+                "Exported".indent().bold().green(),
                 &image_name,
                 &scale,
             ),
             View::Error { description } => {
-                format!("       {} {}\n", "Error".bold().red(), &description)
+                format!("{} {}", "Error".indent().bold().red(), &description)
             }
             View::Done { message } => {
                 if let Some(m) = message {
-                    format!("        {} {}\n", "Done".bold().green(), &m)
+                    format!("{} {}", "Done".indent().bold().green(), &m)
                 } else {
-                    format!("        {}\n", "Done".bold().green())
+                    format!("{}", "Done".indent().bold().green())
                 }
             }
         }

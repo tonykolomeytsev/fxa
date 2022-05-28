@@ -1,6 +1,6 @@
 use crossterm::style::Stylize;
 
-use crate::common::renderer::Renderable;
+use crate::common::renderer::{Indentable, Renderable};
 
 pub enum View {
     ReadingConfig { path: String },
@@ -18,60 +18,74 @@ pub enum View {
 }
 
 impl Renderable for View {
-    fn render(self) -> String {
+    fn render(&self) -> String {
         match self {
             View::ReadingConfig { path } => format!(
-                "     {} config from file {}\n",
-                "Loading".bold().cyan(),
+                "{} config from file {}",
+                "Loading".indent().bold().cyan(),
                 &path,
             ),
             View::ReceivedConfig { path } => format!(
-                "      {} config from file {}\n",
-                "Loaded".bold().green(),
+                "{} config from file {}",
+                "Loaded".indent().bold().green(),
                 &path,
             ),
             View::FetchingDom { url } => format!(
-                "    {} figma file nodes from {}\n",
-                "Fetching".bold().cyan(),
+                "{} figma file nodes from {}",
+                "Fetching".indent().bold().cyan(),
                 &url,
             ),
             View::DomFetched { url, from_cache } => format!(
-                "     {} figma file nodes from {}\n",
-                "Fetched".bold().green(),
+                "{} figma file nodes from {}",
+                "Fetched".indent().bold().green(),
                 if !from_cache { &url } else { "cache" },
             ),
-            View::ProcessingDom => format!(
-                "  {} {}\n",
-                "Processing".bold().cyan(),
-                "figma file nodes..."
-            ),
+            View::ProcessingDom => {
+                format!(
+                    "{} {}",
+                    "Processing".indent().bold().cyan(),
+                    "figma file nodes..."
+                )
+            }
             View::FoundIcons(frame_name) => format!(
-                "       {} figma frame `{}` with icons\n",
-                "Found".bold().green(),
+                "{} figma frame `{}` with icons",
+                "Found".indent().bold().green(),
                 &frame_name,
             ),
             View::FetchingIcon(image_name) => format!(
-                "    {} download url for icon {}\n",
-                "Fetching".bold().cyan(),
+                "{} download url for icon {}",
+                "Fetching".indent().bold().cyan(),
                 &image_name,
             ),
             View::DownloadingIcon(image_name) => {
-                format!(" {} icon {}\n", "Downloading".bold().cyan(), &image_name)
+                format!(
+                    "{} icon {}",
+                    "Downloading".indent().bold().cyan(),
+                    &image_name
+                )
             }
             View::IconDownloaded(image_name) => {
-                format!("  {} icon {}\n", "Downloaded".bold().green(), &image_name)
+                format!(
+                    "{} icon {}",
+                    "Downloaded".indent().bold().green(),
+                    &image_name
+                )
             }
             View::IconExported(image_name) => {
-                format!("    {} icon {}\n", "Exported".bold().green(), &image_name)
+                format!(
+                    "{} icon {}",
+                    "Exported".indent().bold().green(),
+                    &image_name
+                )
             }
             View::Error { description } => {
-                format!("       {} {}\n", "Error".bold().red(), &description)
+                format!("{} {}", "Error".indent().bold().red(), &description)
             }
             View::Done { message } => {
                 if let Some(m) = message {
-                    format!("        {} {}\n", "Done".bold().green(), &m)
+                    format!("{} {}", "Done".indent().bold().green(), &m)
                 } else {
-                    format!("        {}\n", "Done".bold().green())
+                    format!("{}", "Done".indent().bold().green())
                 }
             }
         }

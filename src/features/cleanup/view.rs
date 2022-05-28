@@ -1,6 +1,6 @@
 use crossterm::style::Stylize;
 
-use crate::common::renderer::Renderable;
+use crate::common::renderer::{Indentable, Renderable};
 
 pub enum View {
     Error { description: String },
@@ -8,13 +8,13 @@ pub enum View {
 }
 
 impl Renderable for View {
-    fn render(self) -> String {
+    fn render(&self) -> String {
         match self {
             View::Error { description } => {
-                format!("       {} {}\n", "Error".bold().red(), &description)
+                format!("{} {}", "Error".indent().bold().red(), &description)
             }
             View::Done { message } => {
-                format!("        {} {}\n", "Done".bold().green(), &message)
+                format!("{} {}", "Done".indent().bold().green(), &message)
             }
         }
     }
