@@ -50,3 +50,10 @@ fn test_complex() {
     let res_name = "ic_24_paper_id_left_android_100_".to_string();
     assert_eq!(to_res_name(&source_name), res_name);
 }
+
+#[test]
+fn test_nothing_changes() {
+    let source_name = "img_promo_banner".to_string();
+    let res_name = "img_promo_banner".to_string();
+    assert_eq!(to_res_name(&source_name), res_name);
+}
