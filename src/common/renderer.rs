@@ -13,6 +13,12 @@ pub trait Indentable {
 }
 
 impl Indentable for &str {
+    /// Add space indentation for the string if string len is lower than [INDENT_SIZE].
+    ///
+    /// # Example
+    /// ```rust
+    /// asserteq!("Done".indent(), "        Done".to_string())
+    /// ```
     fn indent(&self) -> String {
         let len = self.len();
         let indent = if len <= INDENT_SIZE {
@@ -24,10 +30,21 @@ impl Indentable for &str {
     }
 }
 
+/// An interface for types that can be converted into a formatted color output.
 pub trait Renderable {
     fn render(&self) -> String;
 }
 
+/// `Renderer` uses terminal for beautyful formatted color output.
+///
+/// Maybe in a future will handle some view state but now it's stateless.
+///
+/// Use default constructor to create `Renderer`.
+/// ```rust
+/// let renderer = Renderer();
+/// ```
+///
+/// Also see [Renderable] and its implementations.
 pub struct Renderer();
 
 impl Renderer {
