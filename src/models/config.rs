@@ -1,7 +1,8 @@
 use serde::Deserialize;
 use std::collections::HashMap;
-use std::fmt;
 use std::fs::File;
+
+use crate::common::error::CommonError;
 
 /// App config from YAML:
 /// ```yaml
@@ -157,33 +158,21 @@ pub struct AndroidImagesWebpConfig {
     pub quality: f32,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct LoadAppConfigError {
-    pub message: String,
-    pub cause: String,
-}
-
-impl fmt::Display for LoadAppConfigError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}; {}", &self.message, &self.cause)
-    }
-}
-
 impl AppConfig {
-    pub fn from_file(yaml_config_path: &String) -> Result<Self, LoadAppConfigError> {
+    pub fn from_file(yaml_config_path: &String) -> Result<Self, CommonError> {
         match File::open(yaml_config_path) {
             Ok(file) => match serde_yaml::from_reader(&file) {
                 Ok(app_config) => Ok(app_config),
                 Err(e) => {
                     let message = format!("while parsing config file {}", yaml_config_path);
-                    let cause = format!("{}", e);
-                    Err(LoadAppConfigError { message, cause })
+                    let cause = Some(format!("{}", e));
+                    Err(CommonError { message, cause })
                 }
             },
             Err(e) => {
                 let message = format!("while opening config file {}", yaml_config_path);
-                let cause = format!("{}", e);
-                Err(LoadAppConfigError { message, cause })
+                let cause = Some(format!("{}", e));
+                Err(CommonError { message, cause })
             }
         }
     }
