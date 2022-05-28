@@ -12,25 +12,47 @@ use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::BufReader;
 
+/// Response from Figma API.
+///
+/// Endpoint: `https://api.figma.com/v1/files/:file_key`
+///
+/// Details: https://www.figma.com/developers/api#get-files-endpoint
 #[derive(Debug, Deserialize, Serialize)]
 struct FigmaGetFileResponse {
     document: Document,
 }
 
+/// Response from Figma API.
+///
+/// Endpoint: `https://api.figma.com/v1/images/:file_key`
+///
+/// Details: https://www.figma.com/developers/api#get-images-endpoint
 #[derive(Debug, Deserialize)]
 struct FigmaGetImageResponse {
     images: HashMap<String, String>,
 }
 
+/// An `FigmaApi` to make requests to Figma API endpoints.
+///
+/// Use `FigmaApi::new(client)` to build new instance.
+///
+/// # Example
+///
+/// ```rust
+/// let api = FigmaApi::new(create_http_client(&figma_personal_access_token));
+/// let document = api.get_document(&file_id).unwrap();
+/// println!("{}", document);
+/// ```
 pub struct FigmaApi {
     client: Client,
 }
 
 impl ImageFormat {
-    fn as_download_extension(&self) -> String {
+    fn download_extension(&self) -> String {
         match self {
             ImageFormat::Png => "png".to_string(),
             ImageFormat::Svg => "svg".to_string(),
+            // We've returned PNG format because we will convert to WEBP manually
             ImageFormat::Webp => "png".to_string(),
         }
     }
@@ -40,10 +62,25 @@ pub const FIGMA_FILES_ENDPOINT: &str = "https://api.figma.com/v1/files/";
 pub const FIGMA_IMAGES_ENDPOINT: &str = "https://api.figma.com/v1/images/";
 
 impl FigmaApi {
+    /// Create new `FigmaApi` instance to make requests to Figma API endpoints.
+    ///
+    /// # Arguments
+    ///
+    /// * `client` - An instance of [reqwest::blocking::Client] to make requests with.
     pub fn new(client: Client) -> Self {
         Self { client }
     }
 
+    /// Load Figma [Document] from the cache if the cache is not empty. Otherwise,
+    /// load the document from the remote. Returns a tuple ([Document], bool), where
+    /// bool value is true, if the document have loaded from cache.
+    ///
+    /// Endpoint: `https://api.figma.com/v1/files/:file_key`
+    ///
+    /// # Arguments
+    ///
+    /// * `file_id` - Figma file identifier. To obtain a file id, open the file in the browser.
+    /// The file id will be present in the URL after the word file and before the file name.
     pub fn get_document(&self, file_id: &String) -> Result<(Document, bool), CommonError> {
         load_from_cache::<FigmaGetFileResponse>(&file_id)
             .map(|response| (response.document, true))
@@ -66,6 +103,19 @@ impl FigmaApi {
             })
     }
 
+    /// Get url of exported Figma frame to download.
+    ///
+    /// Endpoint: `https://api.figma.com/v1/images/:file_key`
+    ///
+    /// # Arguments
+    ///
+    /// * `file_id` - Figma file identifier. To obtain a file id, open the file in the browser.
+    /// The file id will be present in the URL after the word file and before the file name.
+    /// * `node_id` - node identifier inside Figma file. You can obtain node ids from [Document].
+    /// Learn more about nodes: https://www.figma.com/developers/api#files
+    /// * `scale` - The scale of the exported image, from 0.5 to 4.
+    /// * `format` - Format of the exported image. Figma API supports only JPEG, PNG, SVG and
+    /// PDF formats.
     pub fn get_image_download_url(
         &self,
         file_id: &String,
@@ -79,7 +129,7 @@ impl FigmaApi {
             .get(&url)
             .query(&[("ids", node_id.clone())])
             .query(&[("scale", scale)])
-            .query(&[("format", format.as_download_extension())])
+            .query(&[("format", format.download_extension())])
             .send();
         match_response_internal(response, &url, |response| {
             match response.json::<FigmaGetImageResponse>() {
@@ -96,6 +146,14 @@ impl FigmaApi {
         })
     }
 
+    /// Download an image from remote.
+    ///
+    /// # Arguments
+    ///
+    /// * `image_url` - Url to download image.
+    /// * `image_name` - The name with which the image will be saved to the temporary directory.
+    /// * `image_scale_name` - _Optional_. Will be used as image name suffix.
+    /// * `image_format` - Format with which the image will be saved to the temporary directory.
     pub fn get_image(
         &self,
         image_url: &String,
@@ -119,7 +177,7 @@ impl FigmaApi {
                         TEMP_DIR_PATH,
                         &image_name,
                         &image_scale_name,
-                        image_format.as_download_extension(),
+                        image_format.download_extension(),
                     );
                     fs::write(&image_file_name, bytes)
                         .map_err(|e| {
