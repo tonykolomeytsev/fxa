@@ -6,6 +6,7 @@ use crossterm::{
     QueueableCommand,
 };
 
+/// Because rustc output indent is 12
 const INDENT_SIZE: usize = 12usize;
 
 pub trait Indentable {
