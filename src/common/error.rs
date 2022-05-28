@@ -1,5 +1,6 @@
 use std::fmt;
 
+/// Common struct for all errors in this app.
 #[derive(Debug)]
 pub struct CommonError {
     pub message: String,
