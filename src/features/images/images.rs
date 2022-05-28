@@ -11,16 +11,6 @@ use crate::common::webp;
 use crate::feature_images::view::View;
 use crate::models::config::{AppConfig, ImageFormat};
 
-impl ImageFormat {
-    fn extension(&self) -> String {
-        match &self {
-            ImageFormat::Png => "png".to_string(),
-            ImageFormat::Svg => "svg".to_string(),
-            ImageFormat::Webp => "webp".to_string(),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 struct ImageInfo {
     name: String,
@@ -138,16 +128,16 @@ fn convert_to_webp_if_necessary(
                 image_info.scale_name.clone(),
             ));
             match webp::image_to_webp(&image_file_name, quality) {
-                Some(new_image_path) => {
+                Ok(new_image_path) => {
                     renderer.render(View::ConvertedToWebp(
                         image_info.name.clone(),
                         image_info.scale_name.clone(),
                     ));
                     Ok(new_image_path)
                 }
-                None => Err(CommonError {
+                Err(e) => Err(CommonError {
                     message: "while converting PNG to WEBP".to_string(),
-                    cause: Some("something went wrong in webp module".to_string()),
+                    cause: Some(format!("{}", e)),
                 }),
             }
         }

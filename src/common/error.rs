@@ -32,3 +32,12 @@ impl Into<CommonError> for serde_json::Error {
         }
     }
 }
+
+impl Into<CommonError> for &str {
+    fn into(self) -> CommonError {
+        CommonError {
+            message: self.to_string(),
+            cause: None,
+        }
+    }
+}

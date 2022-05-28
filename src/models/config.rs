@@ -148,6 +148,16 @@ pub enum ImageFormat {
     Svg,
 }
 
+impl ImageFormat {
+    pub fn extension(&self) -> String {
+        match &self {
+            ImageFormat::Png => "png".to_string(),
+            ImageFormat::Svg => "svg".to_string(),
+            ImageFormat::Webp => "webp".to_string(),
+        }
+    }
+}
+
 /// Part of App config from YAML:
 /// ```yaml
 /// webpOptions:
