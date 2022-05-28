@@ -181,21 +181,3 @@ fn save_to_cache<T: Serialize>(value: T, id: &String) -> Result<(), CommonError>
         Err(e) => Err(e.into()),
     }
 }
-
-impl Into<CommonError> for std::io::Error {
-    fn into(self) -> CommonError {
-        CommonError {
-            message: format!("{}", self),
-            cause: None,
-        }
-    }
-}
-
-impl Into<CommonError> for serde_json::Error {
-    fn into(self) -> CommonError {
-        CommonError {
-            message: format!("{}", self),
-            cause: None,
-        }
-    }
-}
