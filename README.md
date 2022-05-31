@@ -18,6 +18,12 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 - **Just one small executable**
 
+- **Good error description**
+
+    There will always be a clear explanation after the inscription Error.
+
+- **One error does not interrupt the entire export process**
+
 ## How to use?
 
 > Installation via package managers will be available later.
