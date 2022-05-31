@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::api::figma::FigmaApi;
-use crate::common::error::CommonError;
-use crate::common::fetcher::fetch;
+use crate::common::error::AppError;
+use crate::common::fetcher::{fetch, FetcherTarget};
 use crate::common::fileutils::{create_dir, move_file};
 use crate::common::http_client::create_http_client;
 use crate::common::renderer::Renderer;
@@ -20,99 +20,103 @@ struct ImageInfo {
     res_name: String,
 }
 
-pub fn export_images(token: &String, image_names: &Vec<String>, path_to_config: &String) {
+pub fn export_images(token: &String, image_names: &Vec<String>, yaml_config_path: &String) {
     let renderer = Renderer();
     let api = FigmaApi::new(create_http_client(&token));
 
-    let result = fetch(&api, &path_to_config, &renderer)
-        .and_then(|e| Ok((e.app_config, e.images_name_to_id)))
-        .and_then(|(app_config, images_table)| {
-            let image_scales = &app_config.android.images.scales;
-            for image_name in image_names {
-                for (scale_name, scale_value) in image_scales {
-                    renderer.render(View::FetchingImage(image_name.clone(), scale_name.clone()));
-                    let image_info = ImageInfo {
-                        name: image_name.clone(),
-                        scale_name: scale_name.clone(),
-                        scale_value: *scale_value,
-                        format: app_config.android.images.format.clone(),
-                        res_name: to_res_name(&image_name),
-                    };
-                    export_image(&api, &app_config, &image_info, &images_table, &renderer);
-                }
-            }
-            Ok(images_table)
-        });
-    match result {
-        Ok(_) => {
-            renderer.render(View::Done { message: None });
-        }
+    let fetcher_entry = match fetch(&api, &yaml_config_path, FetcherTarget::Images, &renderer) {
+        Ok(fetcher_entry) => fetcher_entry,
         Err(e) => {
-            renderer.render(View::Error {
-                description: format!("{}", e),
-            });
+            renderer.render(View::Error(format!("{}", e)));
+            return;
+        }
+    };
+    let (app_config, names_to_ids) = (fetcher_entry.app_config, fetcher_entry.image_names_to_ids);
+
+    let image_scales = &app_config.android.images.scales;
+    for image_name in image_names {
+        for (scale_name, scale_value) in image_scales {
+            // Just to not to pass long parameter list to export_icon function
+            let image_info = ImageInfo {
+                name: image_name.clone(),
+                scale_name: scale_name.clone(),
+                scale_value: *scale_value,
+                format: app_config.android.images.format.clone(),
+                res_name: to_res_name(&image_name),
+            };
+            if let Err(e) = export_image(&api, &app_config, &image_info, &names_to_ids, &renderer) {
+                renderer.render(View::Error(format!("{}", e)))
+            };
+            renderer.new_line();
         }
     }
+
+    renderer.render(View::Done { message: None });
 }
 
 fn export_image(
     api: &FigmaApi,
     app_config: &AppConfig,
     image_info: &ImageInfo,
-    images_table: &HashMap<String, String>,
+    names_to_ids: &HashMap<String, String>,
     renderer: &Renderer,
-) {
+) -> Result<(), AppError> {
     let file_id = &app_config.figma.file_id;
     let frame_name = &app_config.common.images.figma_frame_name;
     let quality = app_config.android.images.webp_options.quality;
 
-    let result = images_table
-        .get(&image_info.name)
-        .ok_or_else(|| CommonError {
-            message: format!(
-                "occurred because an image `{}` is missing in frame `{}`",
-                &image_info.name, &frame_name
-            ),
-            cause: None,
-        })
-        .and_then(|node_id| {
-            api.get_image_download_url(file_id, node_id, image_info.scale_value, &image_info.format)
-        })
-        .and_then(|image_url| download_image(&app_config, &api, &image_url, &image_info, &renderer))
-        .and_then(|image_file_name| {
-            renderer.render(View::ImageDownloaded(
-                image_info.name.clone(),
-                image_info.scale_name.clone(),
-            ));
-            convert_to_webp_if_necessary(&image_info, image_file_name, quality, &renderer)
-        })
-        .and_then(|image_temp_path| {
-            let res_path = &app_config.android.main_res;
-            let full_final_image_dir = format!("{}/drawable-{}", &res_path, &image_info.scale_name);
-            create_dir(&full_final_image_dir).map(|()| (image_temp_path, full_final_image_dir))
-        })
-        .and_then(|(image_temp_path, full_final_image_dir)| {
-            let extension = image_info.format.extension();
-            let full_final_image_path = format!(
-                "{}/{}.{}",
-                full_final_image_dir, &image_info.res_name, &extension
-            );
-            move_file(&image_temp_path, &full_final_image_path)
-        })
-        .and_then(|()| {
-            renderer.render(View::ImageExported(
-                image_info.name.clone(),
-                image_info.scale_name.clone(),
-            ));
-            renderer.new_line();
-            Ok(())
-        });
-    if let Err(e) = result {
-        renderer.render(View::Error {
-            description: format!("{}", e),
-        });
-        renderer.new_line();
-    }
+    // Find image frame id by its name
+    let node_id = names_to_ids.get(&image_info.name).ok_or_else(|| {
+        AppError::ImageMissingInFrame(image_info.name.clone(), frame_name.clone())
+    })?;
+
+    // Get download url for exported image
+    renderer.render(View::FetchingImage(
+        image_info.name.clone(),
+        image_info.scale_name.clone(),
+    ));
+    let image_download_url =
+        api.get_image_download_url(file_id, node_id, image_info.scale_value, &image_info.format)?;
+
+    // Download image from gotten url to app's TEMPORARY dir
+    renderer.render(View::DownloadingImage(
+        image_info.name.clone(),
+        image_info.scale_name.clone(),
+    ));
+    let image_format = &app_config.android.images.format;
+    let image_temporary_file_name = api.get_image(
+        &image_download_url,
+        &image_info.res_name,
+        &image_info.scale_name,
+        &image_format,
+    )?;
+
+    // So... Convert if necessary :)
+    let image_temporary_file_name =
+        convert_to_webp_if_necessary(&image_info, image_temporary_file_name, quality, &renderer)?;
+
+    // Create drawable-XXXX dir in res dir of android project
+    let res_path = &app_config.android.main_res;
+    let full_final_image_dir = format!("{}/drawable-{}", &res_path, &image_info.scale_name);
+    create_dir(&full_final_image_dir)
+        .map_err(|e| AppError::CannotCreateDrawableDir(format!("{}", e)))?;
+
+    // Move image from temporary dir to drawable dir of android project
+    let extension = image_info.format.extension();
+    let full_final_image_path = format!(
+        "{}/{}.{}",
+        full_final_image_dir, &image_info.res_name, &extension
+    );
+    move_file(&image_temporary_file_name, &full_final_image_path).map_err(|e| {
+        AppError::CannotMoveToDrawableDir(image_info.name.clone(), format!("{}", e))
+    })?;
+
+    // Tell the user that we are done exporting image for this scale
+    renderer.render(View::ImageExported(
+        image_info.name.clone(),
+        image_info.scale_name.clone(),
+    ));
+    Ok(())
 }
 
 fn convert_to_webp_if_necessary(
@@ -120,47 +124,20 @@ fn convert_to_webp_if_necessary(
     image_file_name: String,
     quality: f32,
     renderer: &Renderer,
-) -> Result<String, CommonError> {
+) -> Result<String, AppError> {
     match image_info.format {
         ImageFormat::Webp => {
             renderer.render(View::ConvertingToWebp(
                 image_info.name.clone(),
                 image_info.scale_name.clone(),
             ));
-            match webp::image_to_webp(&image_file_name, quality) {
-                Ok(new_image_path) => {
-                    renderer.render(View::ConvertedToWebp(
-                        image_info.name.clone(),
-                        image_info.scale_name.clone(),
-                    ));
-                    Ok(new_image_path)
-                }
-                Err(e) => Err(CommonError {
-                    message: "while converting PNG to WEBP".to_string(),
-                    cause: Some(format!("{}", e)),
-                }),
-            }
+            let new_image_path = webp::image_to_webp(&image_file_name, quality)?;
+            renderer.render(View::ConvertedToWebp(
+                image_info.name.clone(),
+                image_info.scale_name.clone(),
+            ));
+            Ok(new_image_path)
         }
         _ => Ok(image_file_name),
     }
-}
-
-fn download_image(
-    app_config: &AppConfig,
-    api: &FigmaApi,
-    image_url: &String,
-    image_info: &ImageInfo,
-    renderer: &Renderer,
-) -> Result<String, CommonError> {
-    renderer.render(View::DownloadingImage(
-        image_info.name.clone(),
-        image_info.scale_name.clone(),
-    ));
-    let image_format = &app_config.android.images.format;
-    api.get_image(
-        &image_url,
-        &image_info.res_name,
-        &image_info.scale_name,
-        &image_format,
-    )
 }

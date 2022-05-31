@@ -1,4 +1,4 @@
-use crate::common::error::CommonError;
+use crate::common::error::AppError;
 use crate::common::fileutils::{create_temp_dir, TEMP_DIR_PATH};
 use crate::models::config::ImageFormat;
 use crate::models::figma::Document;
@@ -81,7 +81,7 @@ impl FigmaApi {
     ///
     /// * `file_id` - Figma file identifier. To obtain a file id, open the file in the browser.
     /// The file id will be present in the URL after the word file and before the file name.
-    pub fn get_document(&self, file_id: &String) -> Result<(Document, bool), CommonError> {
+    pub fn get_document(&self, file_id: &String) -> Result<(Document, bool), AppError> {
         load_from_cache::<FigmaGetFileResponse>(&file_id)
             .map(|response| (response.document, true))
             .or_else(|_| {
@@ -93,11 +93,7 @@ impl FigmaApi {
                             save_to_cache(&response, &file_id).unwrap_or_default();
                             Ok((response.document, false))
                         }
-                        Err(e) => {
-                            let message = format!("while parsing json response from {}", &url);
-                            let cause = Some(format!("{}", e));
-                            Err(CommonError { message, cause })
-                        }
+                        Err(_) => Err(AppError::FetchDomResponseParsing(url.clone())),
                     }
                 })
             })
@@ -122,7 +118,7 @@ impl FigmaApi {
         node_id: &String,
         scale: f32,
         format: &ImageFormat,
-    ) -> Result<String, CommonError> {
+    ) -> Result<String, AppError> {
         let url = format!("{}{}", FIGMA_IMAGES_ENDPOINT, &file_id);
         let response = self
             .client
@@ -134,14 +130,7 @@ impl FigmaApi {
         match_response_internal(response, &url, |response| {
             match response.json::<FigmaGetImageResponse>() {
                 Ok(response) => Ok(response.images.get(node_id).unwrap().clone()), // todo: unwrap safe
-                Err(e) => {
-                    let message = format!("while parsing json response from {}", &url);
-                    let recomendation = "Check your VPN settings and make sure the \
-                    address is reachable through your network"
-                        .to_string();
-                    let cause = Some(format!("{}\n{}", e, recomendation));
-                    Err(CommonError { message, cause })
-                }
+                Err(_) => Err(AppError::GetImageDownloadUrl(url.clone())),
             }
         })
     }
@@ -160,33 +149,21 @@ impl FigmaApi {
         image_name: &String,
         image_scale_name: &String,
         image_format: &ImageFormat,
-    ) -> Result<String, CommonError> {
+    ) -> Result<String, AppError> {
         let response = self.client.get(image_url).send();
         match_response_internal(response, &image_url, |response| {
-            response
-                .bytes()
-                .map_err(|e| {
-                    let message = format!("while getting bytes of response: {}", &image_url);
-                    let cause = Some(format!("{}", e));
-                    CommonError { message, cause }
-                })
-                .and_then(|bytes| create_temp_dir().map(|()| bytes))
-                .and_then(|bytes| {
-                    let image_file_name = format!(
-                        "{}/{}_{}.{}",
-                        TEMP_DIR_PATH,
-                        &image_name,
-                        &image_scale_name,
-                        image_format.download_extension(),
-                    );
-                    fs::write(&image_file_name, bytes)
-                        .map_err(|e| {
-                            let message = "while writing to temp image file".to_string();
-                            let cause = Some(format!("{}", e));
-                            CommonError { message, cause }
-                        })
-                        .map(|()| image_file_name)
-                })
+            let bytes = response.bytes().map_err(|_| AppError::GetImageByteStream)?;
+            create_temp_dir().map_err(|_| AppError::CreateTempDir)?;
+            let image_file_name = format!(
+                "{}/{}_{}.{}",
+                TEMP_DIR_PATH,
+                &image_name,
+                &image_scale_name,
+                image_format.download_extension(),
+            );
+            fs::write(&image_file_name, bytes)
+                .map_err(|_| AppError::GetImageTemporarySave)
+                .map(|_| image_file_name)
         })
     }
 }
@@ -195,48 +172,35 @@ fn match_response_internal<T, F>(
     response: Result<Response, Error>,
     url: &String,
     on_success: F,
-) -> Result<T, CommonError>
+) -> Result<T, AppError>
 where
-    F: Fn(Response) -> Result<T, CommonError>,
+    F: FnOnce(Response) -> Result<T, AppError>,
 {
     match response {
         Ok(response) => match response.status() {
             StatusCode::OK => on_success(response),
-            _ => {
-                let message = format!("while requesting {}", &url);
-                let cause = Some(format!("HTTP status code is {}", response.status()));
-                Err(CommonError { message, cause })
-            }
+            StatusCode::FORBIDDEN => Err(AppError::RequestUnauthorized(response.status())),
+            _ => Err(AppError::RequestHttpStatus(url.clone(), response.status())),
         },
-        Err(e) => {
-            let message = format!("while requesting {}", &url);
-            let recomendation = "Check your VPN settings and make sure the \
-            address is reachable through your network"
-                .to_string();
-            let cause = Some(format!("{}\n{}", e, recomendation));
-            Err(CommonError { message, cause })
-        }
+        Err(_) => Err(AppError::RequestMaybeVPN(url.clone())),
     }
 }
 
-fn load_from_cache<T: DeserializeOwned>(id: &String) -> Result<T, CommonError> {
+fn load_from_cache<T: DeserializeOwned>(id: &String) -> Result<T, AppError> {
     let file_name = format!(".fxn/cache_{}.json", &id);
     File::open(&file_name)
-        .map_err(|e| e.into())
+        .map_err(|_| AppError::LoadFromCache)
         .map(|file| BufReader::new(file))
         .map(|it| serde_json::from_reader(it).unwrap())
 }
 
-fn save_to_cache<T: Serialize>(value: T, id: &String) -> Result<(), CommonError> {
+fn save_to_cache<T: Serialize>(value: T, id: &String) -> Result<(), AppError> {
     let file_name = format!(".fxn/cache_{}.json", &id);
     match create_temp_dir() {
         Ok(()) => match File::create(&file_name).map(|it| serde_json::to_writer(&it, &value)) {
             Ok(_) => Ok(()),
-            Err(e) => Err(CommonError {
-                message: format!("while wrong writing in cache file {}", &file_name),
-                cause: Some(format!("{}", &e)),
-            }),
+            Err(_) => Err(AppError::SaveToCache),
         },
-        Err(e) => Err(e.into()),
+        Err(_) => Err(AppError::CreateTempDir),
     }
 }

@@ -2,7 +2,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs::File;
 
-use crate::common::error::CommonError;
+use crate::common::error::AppError;
 
 /// App config from YAML:
 /// ```yaml
@@ -12,6 +12,8 @@ use crate::common::error::CommonError;
 /// common:
 ///     images:
 ///         figmaFrameName: Images
+///     icons:
+///         figmaFrameName: Icons
 /// android:
 ///     mainRes: "./main/res"
 ///     images:
@@ -28,8 +30,16 @@ use crate::common::error::CommonError;
 #[serde(rename_all = "camelCase")]
 pub struct AppConfig {
     pub figma: FigmaConfig,
+    #[serde(default = "default_common_config")]
     pub common: CommonConfig,
     pub android: AndroidConfig,
+}
+
+fn default_common_config() -> CommonConfig {
+    CommonConfig {
+        images: default_common_images_config(),
+        icons: default_common_icons_config(),
+    }
 }
 
 /// Part of App config from YAML:
@@ -50,10 +60,27 @@ pub struct FigmaConfig {
 /// common:
 ///     images:
 ///         figmaFrameName: Images
+///     icons:
+///         figmaFrameName: Icons
 /// ```
 #[derive(Debug, Deserialize)]
 pub struct CommonConfig {
+    #[serde(default = "default_common_images_config")]
     pub images: CommonImagesConfig,
+    #[serde(default = "default_common_icons_config")]
+    pub icons: CommonIconsConfig,
+}
+
+fn default_common_images_config() -> CommonImagesConfig {
+    CommonImagesConfig {
+        figma_frame_name: "Images".to_string(),
+    }
+}
+
+fn default_common_icons_config() -> CommonIconsConfig {
+    CommonIconsConfig {
+        figma_frame_name: "Icons".to_string(),
+    }
 }
 
 /// Part of App config from YAML:
@@ -69,6 +96,17 @@ pub struct CommonImagesConfig {
 
 /// Part of App config from YAML:
 /// ```yaml
+/// images:
+///     figmaFrameName: Images
+/// ```
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommonIconsConfig {
+    pub figma_frame_name: String,
+}
+
+/// Part of App config from YAML:
+/// ```yaml
 /// android:
 ///     mainRes: "./main/res"
 ///     images:
@@ -77,7 +115,7 @@ pub struct CommonImagesConfig {
 ///             hdpi: 1.5
 ///             xhdpi: 2.0
 ///             xxhdpi: 3.0
-///         format: png | webp
+///         format: svg | png | webp
 ///         webpOptions:
 ///             quality: 0..100
 /// ```
@@ -169,21 +207,14 @@ pub struct AndroidImagesWebpConfig {
 }
 
 impl AppConfig {
-    pub fn from_file(yaml_config_path: &String) -> Result<Self, CommonError> {
-        match File::open(yaml_config_path) {
-            Ok(file) => match serde_yaml::from_reader(&file) {
-                Ok(app_config) => Ok(app_config),
-                Err(e) => {
-                    let message = format!("while parsing config file {}", yaml_config_path);
-                    let cause = Some(format!("{}", e));
-                    Err(CommonError { message, cause })
-                }
-            },
-            Err(e) => {
-                let message = format!("while opening config file {}", yaml_config_path);
-                let cause = Some(format!("{}", e));
-                Err(CommonError { message, cause })
-            }
+    pub fn from_file(yaml_config_path: &String) -> Result<Self, AppError> {
+        let file = match File::open(yaml_config_path) {
+            Ok(file) => file,
+            Err(e) => return Err(AppError::AppConfigOpen(format!("{}", e))),
+        };
+        match serde_yaml::from_reader(&file) {
+            Ok(app_config) => Ok(app_config),
+            Err(e) => Err(AppError::AppConfigParse(e)),
         }
     }
 }

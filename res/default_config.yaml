@@ -5,13 +5,21 @@ figma:
   # [Optional] Page name inside the Figma file.
   # If you do not specify this parameter, the search for resources will be performed ON ALL PAGES of the file.
   pageName: Resources
+
+# [Optional] Default values for `common` section are shown below
 common:
   images:
     # [Optional] Name of the Figma's frame where images are located. Default is Images
     figmaFrameName: Illustrations
+  icons:
+    # [Optional] Name of the Figma's frame where icons are located. Default is Icons
+    figmaFrameName: Icons
+
 android:
   # Relative or absolute path to the `main/res` folder of your android project.
   mainRes: ./app/src/main/res
+
+  # [Optional] Default values for `images` section are shown below
   images:
     # [Optional] An array of asset scales that should be downloaded. Default value is presented below
     scales:

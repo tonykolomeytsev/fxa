@@ -7,7 +7,7 @@ pub enum View {
     DownloadingIcon(String),
     IconDownloaded(String),
     IconExported(String),
-    Error { description: String },
+    Error(String),
     Done { message: Option<String> },
 }
 
@@ -40,7 +40,7 @@ impl Renderable for View {
                     &image_name
                 )
             }
-            View::Error { description } => {
+            View::Error(description) => {
                 format!("{} {}", "Error".indent().bold().red(), &description)
             }
             View::Done { message } => {

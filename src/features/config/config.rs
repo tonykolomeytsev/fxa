@@ -44,11 +44,7 @@ pub fn create_default_config(path: &String) {
     let renderer = Renderer();
     renderer.new_line();
     match result {
-        Ok(()) => renderer.render(View::Done {
-            message: format!("created config file {}", &path),
-        }),
-        Err(e) => renderer.render(View::Error {
-            description: format!("{}", e),
-        }),
+        Ok(()) => renderer.render(View::Created(path.clone())),
+        Err(e) => renderer.render(View::Error(format!("{}", e))),
     }
 }

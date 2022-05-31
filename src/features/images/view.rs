@@ -5,11 +5,10 @@ use crate::common::renderer::{Indentable, Renderable};
 pub enum View {
     FetchingImage(String, String),
     DownloadingImage(String, String),
-    ImageDownloaded(String, String),
     ConvertingToWebp(String, String),
     ConvertedToWebp(String, String),
     ImageExported(String, String),
-    Error { description: String },
+    Error(String),
     Done { message: Option<String> },
 }
 
@@ -25,12 +24,6 @@ impl Renderable for View {
             View::DownloadingImage(image_name, scale) => format!(
                 "{} image {} ({})",
                 "Downloading".indent().bold().cyan(),
-                &image_name,
-                &scale,
-            ),
-            View::ImageDownloaded(image_name, scale) => format!(
-                "  {} image {} ({})",
-                "Downloaded".indent().bold().green(),
                 &image_name,
                 &scale,
             ),
@@ -52,7 +45,7 @@ impl Renderable for View {
                 &image_name,
                 &scale,
             ),
-            View::Error { description } => {
+            View::Error(description) => {
                 format!("{} {}", "Error".indent().bold().red(), &description)
             }
             View::Done { message } => {
