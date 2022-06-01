@@ -7,6 +7,7 @@ use crate::common::fileutils::{create_dir, move_file};
 use crate::common::http_client::create_http_client;
 use crate::common::renderer::Renderer;
 use crate::common::res_name::to_res_name;
+use crate::common::vdtool::svg2vector::convert_svg_to_xml;
 use crate::feature_icons::view::View;
 use crate::models::config::{AppConfig, ImageFormat};
 
@@ -73,6 +74,10 @@ fn export_icon(
         &ImageFormat::Svg,
     )?;
 
+    // Convert to VectorDrawable XML
+    let image_temporary_file_name =
+        convert_to_vector_drawable(&icon_info, &image_temporary_file_name)?;
+
     // Create drawable dir in res dir of android project
     renderer.render(View::IconDownloaded(icon_info.name.clone()));
     let res_path = &app_config.android.main_res;
@@ -88,4 +93,12 @@ fn export_icon(
     // Tell the user that we are done
     renderer.render(View::IconExported(icon_info.name.clone()));
     Ok(())
+}
+
+fn convert_to_vector_drawable(
+    icon_info: &IconInfo,
+    image_file_name: &String,
+) -> Result<String, AppError> {
+    convert_svg_to_xml(image_file_name).unwrap();
+    Ok(image_file_name.clone())
 }
