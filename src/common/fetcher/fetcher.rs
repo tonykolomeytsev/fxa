@@ -46,10 +46,14 @@ pub fn fetch(
     });
 
     renderer.render(View::ProcessingDom);
-    let names_to_ids = find_images_frame(&document, &app_config, fetcher_target)?;
+    let desired_frame_name = match fetcher_target {
+        FetcherTarget::Images => &app_config.common.images.figma_frame_name,
+        FetcherTarget::Icons => &app_config.common.icons.figma_frame_name,
+    };
+    let names_to_ids = find_images_frame(&document, &app_config, desired_frame_name)?;
 
     renderer.render(View::FoundImages {
-        frame_name: app_config.common.images.figma_frame_name.clone(),
+        frame_name: desired_frame_name.clone(),
     });
     Ok(FetcherEntry {
         app_config,
@@ -67,13 +71,8 @@ fn fetch_dom(api: &FigmaApi, app_config: &AppConfig) -> Result<(Document, bool),
 fn find_images_frame(
     document: &Document,
     app_config: &AppConfig,
-    fetcher_target: FetcherTarget,
+    desired_frame_name: &String,
 ) -> Result<HashMap<String, String>, AppError> {
-    let desired_frame_name = match fetcher_target {
-        FetcherTarget::Images => &app_config.common.images.figma_frame_name,
-        FetcherTarget::Icons => &app_config.common.icons.figma_frame_name,
-    };
-
     let frame = document
         .children
         .iter()
