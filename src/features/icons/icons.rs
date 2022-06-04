@@ -7,7 +7,7 @@ use crate::common::fileutils::{create_dir, move_file};
 use crate::common::http_client::create_http_client;
 use crate::common::renderer::Renderer;
 use crate::common::res_name::to_res_name;
-use crate::common::vdtool::svg2vector::convert_svg_to_xml;
+use crate::common::vdtool::vdtool::convert_svg_to_xml;
 use crate::feature_icons::view::View;
 use crate::models::config::{AppConfig, ImageFormat};
 

@@ -32,9 +32,9 @@ pub fn image_to_webp(file_path: &String, quality: f32) -> Result<String, AppErro
 
     // Create webp encoded image in RAM
     let webp_memory = encoder.encode(quality);
-    // Put webp-image in a separate webp-folder in the location of the original image.
+    // Put webp-image in the location of the original image
     let original_image_file_name = Path::new(file_path).file_stem().unwrap().to_str().unwrap();
-    // Make full output path for webp-image.
+    // Make full output path for webp-image
     let webp_image_path = format!("{}.webp", original_image_file_name);
 
     File::create(webp_image_path.to_string())
