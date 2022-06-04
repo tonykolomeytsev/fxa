@@ -12,7 +12,7 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 - **No external dependencies.**
 
-    You don't need to install the webp package to convert images to webp. ~~You don't need to install java and run vd-tool to convert svg to xml.~~
+    You don't need to install the webp package to convert images to webp. You don't need to install java and run vd-tool to convert svg to xml.
 
 - **Figma-export-like api**
 
@@ -58,7 +58,7 @@ And then fill out the `for_images.yaml` file with your data (figma file id, fram
 fxn images -c for_images.yaml img_lol img_kek ...
 ```
 
-#### Export icons (SVG, ~~XML~~)
+#### Export icons (Vector Drawable XML, SVG)
 
 ```bash
 fxn icons -c for_icons.yaml ic_24/icon1 ic_16/icon2 ...
