@@ -1,5 +1,7 @@
 # fxn
 
+<img src="images/gh-logo.png"/><br/>
+
 A multi-platform tool for exporting resources from Figma to an Android project.
 
 ## Features
