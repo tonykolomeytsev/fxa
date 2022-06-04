@@ -96,7 +96,9 @@ fn export_image(
         convert_to_webp_if_necessary(&image_info, image_temporary_file_name, quality, &renderer)?;
 
     // Create drawable-XXXX dir in res dir of android project
-    let res_path = &app_config.android.main_res;
+    let res_path = &app_config
+        .main_res_images()
+        .expect("Validation is done in fetcher");
     let full_final_image_dir = format!("{}/drawable-{}", &res_path, &image_info.scale_name);
     create_dir(&full_final_image_dir)
         .map_err(|e| AppError::CannotCreateDrawableDir(format!("{}", e)))?;

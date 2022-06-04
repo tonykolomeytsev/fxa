@@ -31,6 +31,7 @@ pub fn fetch(
         path: yaml_config_path.clone(),
     });
     let app_config = AppConfig::from_file(yaml_config_path)?;
+    validate_app_config(&app_config, &yaml_config_path)?;
     renderer.render(View::ReceivedConfig {
         path: yaml_config_path.clone(),
     });
@@ -106,4 +107,29 @@ fn collect_names_to_ids(frame: &Frame) -> HashMap<String, String> {
         }
     }
     hash_map
+}
+
+fn validate_app_config(app_config: &AppConfig, yaml_config_path: &String) -> Result<(), AppError> {
+    let common_main_res = app_config.android.main_res.clone();
+    let images_main_res = app_config.android.images.main_res.clone();
+    let icons_main_res = app_config.android.icons.main_res.clone();
+
+    match (common_main_res, images_main_res, icons_main_res) {
+        // There are no mainRes
+        (None, None, None) => Err(AppError::AppConfigInvalidMainResCommon(
+            yaml_config_path.clone(),
+        )),
+
+        // There is a mainRes for images, but not for icons
+        (None, Some(_), None) => Err(AppError::AppConfigInvalidMainResIcons(
+            yaml_config_path.clone(),
+        )),
+
+        // There is a mainRes for icons, but not for images
+        (None, None, Some(_)) => Err(AppError::AppConfigInvalidMainResImages(
+            yaml_config_path.clone(),
+        )),
+
+        _ => Ok(()),
+    }
 }

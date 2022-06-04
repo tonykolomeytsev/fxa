@@ -17,6 +17,7 @@ use crate::common::error::AppError;
 /// android:
 ///     mainRes: "./main/res"
 ///     images:
+///         mainRes: "./main/res"
 ///         scales:
 ///             mdpi: 1.0
 ///             hdpi: 1.5
@@ -25,6 +26,9 @@ use crate::common::error::AppError;
 ///         format: svg | png | webp
 ///         webpOptions:
 ///             quality: 0..100
+///     icons:
+///         mainRes: "./main/res"
+///         format: svg | xml
 /// ```
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -110,6 +114,7 @@ pub struct CommonIconsConfig {
 /// android:
 ///     mainRes: "./main/res"
 ///     images:
+///         mainRes: "./main/res"
 ///         scales:
 ///             mdpi: 1.0
 ///             hdpi: 1.5
@@ -118,41 +123,56 @@ pub struct CommonIconsConfig {
 ///         format: svg | png | webp
 ///         webpOptions:
 ///             quality: 0..100
+///     icons:
+///         mainRes: "./main/res"
+///         format: svg | xml
 /// ```
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AndroidConfig {
-    pub main_res: String,
+    pub main_res: Option<String>,
     #[serde(default = "default_android_images_config")]
     pub images: AndroidImagesConfig,
+    #[serde(default = "default_android_icons_config")]
+    pub icons: AndroidIconsConfig,
 }
 
 fn default_android_images_config() -> AndroidImagesConfig {
     AndroidImagesConfig {
+        main_res: None,
         scales: default_scales(),
-        format: default_format(),
+        format: default_image_format(),
         webp_options: default_webp_options(),
+    }
+}
+
+fn default_android_icons_config() -> AndroidIconsConfig {
+    AndroidIconsConfig {
+        main_res: None,
+        format: IconFormat::Xml,
     }
 }
 
 /// Part of App config from YAML:
 /// ```yaml
 /// images:
+///     mainRes: "./main/res"
 ///     scales:
 ///         mdpi: 1.0
 ///         hdpi: 1.5
 ///         xhdpi: 2.0
 ///         xxhdpi: 3.0
-///     format: png | webp
+///     format: svg | png | webp
 ///     webpOptions:
 ///         quality: 0..100
 /// ```
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AndroidImagesConfig {
+    pub main_res: Option<String>,
     #[serde(default = "default_scales")]
     pub scales: HashMap<String, f32>,
-    #[serde(default = "default_format")]
+    #[serde(default = "default_image_format")]
     pub format: ImageFormat,
     #[serde(default = "default_webp_options")]
     pub webp_options: AndroidImagesWebpConfig,
@@ -170,7 +190,7 @@ fn default_scales() -> HashMap<String, f32> {
     .collect()
 }
 
-fn default_format() -> ImageFormat {
+fn default_image_format() -> ImageFormat {
     ImageFormat::Webp
 }
 
@@ -206,6 +226,31 @@ pub struct AndroidImagesWebpConfig {
     pub quality: f32,
 }
 
+/// Part of App config from YAML:
+/// ```yaml
+/// icons:
+///     mainRes: "./main/res"
+///     format: svg | xml
+/// ```
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AndroidIconsConfig {
+    pub main_res: Option<String>,
+    #[serde(default = "default_icons_format")]
+    pub format: IconFormat,
+}
+
+fn default_icons_format() -> IconFormat {
+    IconFormat::Xml
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub enum IconFormat {
+    Svg,
+    Xml,
+}
+
 impl AppConfig {
     pub fn from_file(yaml_config_path: &String) -> Result<Self, AppError> {
         let file = match File::open(yaml_config_path) {
@@ -216,5 +261,21 @@ impl AppConfig {
             Ok(app_config) => Ok(app_config),
             Err(e) => Err(AppError::AppConfigParse(e)),
         }
+    }
+
+    /// Returns the required mainRes path from config.
+    pub fn main_res_images(&self) -> Option<String> {
+        let common_main_res = self.android.main_res.clone();
+        let images_main_res = self.android.images.main_res.clone();
+
+        images_main_res.or(common_main_res)
+    }
+
+    /// Returns the required mainRes path from config.
+    pub fn main_res_icons(&self) -> Option<String> {
+        let common_main_res = self.android.main_res.clone();
+        let icons_main_res = self.android.icons.main_res.clone();
+
+        icons_main_res.or(common_main_res)
     }
 }
