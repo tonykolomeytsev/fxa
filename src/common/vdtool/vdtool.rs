@@ -3,15 +3,19 @@ use std::io::BufWriter;
 use std::io::Write;
 use std::path::Path;
 
-use minidom::Element;
+use usvg::Node;
+use usvg::Options;
+use usvg::Tree;
 
 use crate::common::fileutils::TEMP_DIR_PATH;
 use crate::common::vdtool::error::VectorDrawableError;
 
-use crate::common::vdtool::ir::IrNode;
-
 pub trait ToVectorDrawable {
-    fn to_vector_drawable<W>(&self, w: &mut BufWriter<W>) -> Result<(), std::io::Error>
+    fn to_vector_drawable<W>(
+        &self,
+        w: &mut BufWriter<W>,
+        node: Option<&Node>,
+    ) -> Result<(), std::io::Error>
     where
         W: Write;
 }
@@ -20,9 +24,8 @@ pub fn convert_svg_to_xml(file_path: &String) -> Result<String, VectorDrawableEr
     let svg_content = fs::read_to_string(&file_path)
         .map_err(|e| VectorDrawableError::CannotReadSvg(file_path.clone(), e.to_string()))?;
 
-    let svg_tree: Element = svg_content.parse().map_err(|e: minidom::Error| {
-        VectorDrawableError::CannotParseSvg(file_path.clone(), e.to_string())
-    })?;
+    let svg_tree = Tree::from_str(&svg_content, &Options::default().to_ref())
+        .map_err(|e| VectorDrawableError::CannotParseSvg(file_path.clone(), e.to_string()))?;
 
     // Put xml-icon in the location of the original svg icon
     let original_icon_file_name = Path::new(file_path).file_stem().unwrap().to_str().unwrap();
@@ -36,9 +39,25 @@ pub fn convert_svg_to_xml(file_path: &String) -> Result<String, VectorDrawableEr
         .open(&xml_icon_path)
         .unwrap();
     let mut writer = BufWriter::new(xml_file);
-    let ir_node = IrNode::from(&svg_tree)?;
-    ir_node.to_vector_drawable(&mut writer)?;
+    svg_tree.root().to_vector_drawable(&mut writer, None)?;
 
     // return ok
     Ok(xml_icon_path)
+}
+
+impl ToVectorDrawable for Node {
+    fn to_vector_drawable<W>(
+        &self,
+        w: &mut BufWriter<W>,
+        _: Option<&Node>,
+    ) -> Result<(), std::io::Error>
+    where
+        W: Write,
+    {
+        match &*self.borrow() {
+            usvg::NodeKind::Svg(svg) => svg.to_vector_drawable(w, Some(&self)),
+            usvg::NodeKind::Path(path) => path.to_vector_drawable(w, Some(&self)),
+            _ => Ok(()),
+        }
+    }
 }
