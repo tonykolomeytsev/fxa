@@ -72,4 +72,4 @@ Check `fxn --help`.
 
 ## Project status
 
-The project is in progress and is being developed just for fun. Additional features, such as svg to xml conversion, will be added in the future.
+The project is in progress and is being developed just for fun. Additional features will be added in the future.
