@@ -251,6 +251,15 @@ pub enum IconFormat {
     Xml,
 }
 
+impl IconFormat {
+    pub fn extension(&self) -> String {
+        match &self {
+            IconFormat::Svg => "svg".to_string(),
+            IconFormat::Xml => "xml".to_string(),
+        }
+    }
+}
+
 impl AppConfig {
     pub fn from_file(yaml_config_path: &String) -> Result<Self, AppError> {
         let file = match File::open(yaml_config_path) {

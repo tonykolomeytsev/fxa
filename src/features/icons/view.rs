@@ -6,6 +6,8 @@ pub enum View {
     FetchingIcon(String),
     DownloadingIcon(String),
     IconDownloaded(String),
+    ConvertingToXml(String),
+    ConvertedToXml(String),
     IconExported(String),
     Error(String),
     Done { message: Option<String> },
@@ -31,6 +33,20 @@ impl Renderable for View {
                     "{} icon {}",
                     "Downloaded".indent().bold().green(),
                     &image_name
+                )
+            }
+            View::ConvertingToXml(image_name) => {
+                format!(
+                    "{} to Android Drawable XML image {}",
+                    "Converting".indent().bold().cyan(),
+                    &image_name,
+                )
+            }
+            View::ConvertedToXml(image_name) => {
+                format!(
+                    "{} to Android Drawable XML image {}",
+                    "Converted".indent().bold().green(),
+                    &image_name,
                 )
             }
             View::IconExported(image_name) => {
