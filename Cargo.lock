@@ -424,7 +424,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fxn"
+name = "fxa"
 version = "0.1.0"
 dependencies = [
  "clap",

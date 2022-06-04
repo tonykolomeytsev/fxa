@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-pub const TEMP_DIR_PATH: &str = ".fxn";
+pub const TEMP_DIR_PATH: &str = ".fxa";
 
 /// Create temporary directory `.fxn` at the root of the working directory
 /// (where the app was launched from).
