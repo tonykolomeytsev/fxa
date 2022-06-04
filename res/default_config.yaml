@@ -1,0 +1,47 @@
+figma:
+  # Identifier of the Figma file. To obtain a file id, open the file in the browser. 
+  # The file id will be present in the URL after the word file and before the file name.
+  fileId: YOUR_FIGMA_FILE_ID
+  # [Optional] Page name inside the Figma file.
+  # If you do not specify this parameter, the search for resources will be performed ON ALL PAGES of the file.
+  pageName: Resources
+
+# [Optional] Default values for `common` section are shown below
+common:
+  images:
+    # [Optional] Name of the Figma's frame where images are located. Default is Images
+    figmaFrameName: Illustrations
+  icons:
+    # [Optional] Name of the Figma's frame where icons are located. Default is Icons
+    figmaFrameName: Icons
+
+android:
+  # [Optional] Relative or absolute path to the `main/res` folder of your android project.
+  # If you do not specify this parameter, you should specify `android.images.mainRes` and
+  # `android.icons.mainRes` paremeters.
+  mainRes: ./app/src/main/res
+
+  # [Optional] Default values for `images` section are shown below.
+  images:
+    # [Optional] Overrides `android.mainRes` paremeter when exporting images. Default is None.
+    mainRes: ./icons_module/src/main/res
+    # [Optional] An array of asset scales that should be downloaded. Default value is presented below
+    scales:
+      mdpi: 1.0
+      hdpi: 1.5
+      xhdpi: 2
+      xxhdpi: 3
+    # [Optional] Exported images file format: png | webp | svg. Default is webp
+    format: webp
+    webpOptions:
+      # [Optional] Encoding quality in percents. You can use 100% for loseless encoding. Default is 85
+      quality: 85
+  
+  # [Optional] Default values for `icon` section are shown below.
+  icons:
+    # [Optional] Overrides `android.mainRes` paremeter when exporting images. Default is None.
+    mainRes: ./icons_module/src/main/res
+    # [Optional] Exported images file format: xml | svg. Default is xml (android vector drawable)
+    format: xml
+
+
