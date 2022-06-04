@@ -1,3 +1,4 @@
+use crate::common::vdtool::error::VectorDrawableError;
 use reqwest::StatusCode;
 use thiserror::Error;
 
@@ -13,6 +14,21 @@ pub enum AppError {
 
     #[error("Cannot parse app config. Cause: {0}")]
     AppConfigParse(#[from] serde_yaml::Error),
+
+    #[error(
+        "To export resources, you must specify `android.mainRes` or `android.images.mainRes` with `android.icons.mainRes` in {0}"
+    )]
+    AppConfigInvalidMainResCommon(String),
+
+    #[error(
+        "To export icons, you must specify `android.icons.mainRes` or `android.mainRes` in {0}"
+    )]
+    AppConfigInvalidMainResIcons(String),
+
+    #[error(
+        "To export images, you must specify `android.images.mainRes` or `android.mainRes` in {0}"
+    )]
+    AppConfigInvalidMainResImages(String),
 
     #[error("Cannot parse json response from Figma API ({0}).")]
     FetchDomResponseParsing(String),
@@ -86,4 +102,7 @@ pub enum AppError {
 
     #[error("Can't move image {0} from temporary directory to drawable directory. Cause: {1}")]
     CannotMoveToDrawableDir(String, String),
+
+    #[error("Can't convert svg to android vector drawable xml. Cause: {0}")]
+    CannotConvertToXml(#[from] VectorDrawableError),
 }

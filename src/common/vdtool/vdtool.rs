@@ -33,12 +33,12 @@ pub fn convert_svg_to_xml(file_path: &String) -> Result<String, VectorDrawableEr
         .create(true)
         .truncate(true)
         .write(true)
-        .open(xml_icon_path)
+        .open(&xml_icon_path)
         .unwrap();
     let mut writer = BufWriter::new(xml_file);
     let ir_node = IrNode::from(&svg_tree)?;
     ir_node.to_vector_drawable(&mut writer)?;
 
     // return ok
-    Ok(file_path.clone())
+    Ok(xml_icon_path)
 }

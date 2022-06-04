@@ -9,12 +9,13 @@ use crate::common::renderer::Renderer;
 use crate::common::res_name::to_res_name;
 use crate::common::vdtool::vdtool::convert_svg_to_xml;
 use crate::feature_icons::view::View;
-use crate::models::config::{AppConfig, ImageFormat};
+use crate::models::config::{AppConfig, IconFormat, ImageFormat};
 
 #[derive(Debug, Clone)]
 struct IconInfo {
     name: String,
     res_name: String,
+    format: IconFormat,
 }
 
 pub fn export_icons(token: &String, image_names: &Vec<String>, yaml_config_path: &String) {
@@ -35,6 +36,7 @@ pub fn export_icons(token: &String, image_names: &Vec<String>, yaml_config_path:
         let icon_info = IconInfo {
             name: image_name.clone(),
             res_name: to_res_name(&image_name),
+            format: app_config.android.icons.format.clone(),
         };
         if let Err(e) = export_icon(&api, &app_config, &icon_info, &names_to_ids, &renderer) {
             renderer.render(View::Error(format!("{}", e)))
@@ -80,7 +82,9 @@ fn export_icon(
 
     // Create drawable dir in res dir of android project
     renderer.render(View::IconDownloaded(icon_info.name.clone()));
-    let res_path = &app_config.android.main_res;
+    let res_path = &app_config
+        .main_res_icons()
+        .expect("Validation is done in fetcher");
     let full_final_image_dir = format!("{}/drawable", &res_path);
     create_dir(&full_final_image_dir)
         .map_err(|e| AppError::CannotCreateDrawableDir(format!("{}", e)))?;
@@ -99,6 +103,12 @@ fn convert_to_vector_drawable(
     icon_info: &IconInfo,
     image_file_name: &String,
 ) -> Result<String, AppError> {
-    convert_svg_to_xml(image_file_name).unwrap();
-    Ok(image_file_name.clone())
+    match icon_info.format {
+        IconFormat::Xml => {
+            let new_icon_path =
+                convert_svg_to_xml(image_file_name).map_err(AppError::CannotConvertToXml)?;
+            Ok(new_icon_path)
+        }
+        IconFormat::Svg => Ok(image_file_name.clone()),
+    }
 }
