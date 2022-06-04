@@ -16,11 +16,15 @@ common:
     figmaFrameName: Icons
 
 android:
-  # Relative or absolute path to the `main/res` folder of your android project.
+  # [Optional] Relative or absolute path to the `main/res` folder of your android project.
+  # If you do not specify this parameter, you should specify `android.images.mainRes` and
+  # `android.icons.mainRes` paremeters.
   mainRes: ./app/src/main/res
 
-  # [Optional] Default values for `images` section are shown below
+  # [Optional] Default values for `images` section are shown below.
   images:
+    # [Optional] Overrides `android.mainRes` paremeter when exporting images. Default is None.
+    mainRes: ./icons_module/src/main/res
     # [Optional] An array of asset scales that should be downloaded. Default value is presented below
     scales:
       mdpi: 1.0
@@ -32,4 +36,12 @@ android:
     webpOptions:
       # [Optional] Encoding quality in percents. You can use 100% for loseless encoding. Default is 85
       quality: 85
+  
+  # [Optional] Default values for `icon` section are shown below.
+  icons:
+    # [Optional] Overrides `android.mainRes` paremeter when exporting images. Default is None.
+    mainRes: ./icons_module/src/main/res
+    # [Optional] Exported images file format: xml | svg. Default is xml (android vector drawable)
+    format: xml
+
 
