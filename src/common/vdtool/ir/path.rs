@@ -34,6 +34,7 @@ fn attributes(element: &Element) -> Result<BTreeMap<String, String>, VectorDrawa
     let mut output = BTreeMap::new();
     for (name, value) in element.attrs() {
         if PRESENTATION_MAP.contains_key(name) {
+            // As in SvgNode.fillPresentationAttributesInternal
             let value = match name {
                 SVG_FILL_RULE | SVG_CLIP_RULE => match value {
                     "nonzero" => "nonZero",

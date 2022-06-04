@@ -121,11 +121,11 @@ lazy_static! {
 
     pub static ref PRESENTATION_MAP: BTreeMap<&'static str, &'static str> = BTreeMap::from([
         (SVG_CLIP, "android:clip"),
-        (SVG_CLIP_RULE, ""), // Treated individually.
+        // TODO: (SVG_CLIP_RULE, ""), // Treated individually.
         (SVG_FILL, "android:fillColor"),
         (SVG_FILL_RULE, "android:fillType"),
         (SVG_FILL_OPACITY, "android:fillAlpha"),
-        (SVG_OPACITY, ""), // Treated individually.
+        // TODO: (SVG_OPACITY, ""), // Treated individually.
         (SVG_STROKE, "android:strokeColor"),
         (SVG_STROKE_OPACITY, "android:strokeAlpha"),
         (SVG_STROKE_LINEJOIN, "android:strokeLineJoin"),
