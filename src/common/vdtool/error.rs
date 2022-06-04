@@ -10,9 +10,6 @@ pub enum VectorDrawableError {
     #[error("Can't parse file {0}. Cause: {1}")]
     CannotParseSvg(String, String),
 
-    #[error("Invalid dimensions in <svg> tag")]
-    InvalidDimensionSvgTag,
-
     #[error("Can't write to output xml file")]
     CannotWrite(#[from] io::Error),
 }

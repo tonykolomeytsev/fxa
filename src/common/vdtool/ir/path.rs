@@ -1,172 +1,121 @@
+use std::io::BufWriter;
 use std::io::Write;
-use std::{collections::BTreeMap, io::BufWriter};
 
-use minidom::Element;
+use usvg::PathSegment;
+use usvg::{Color, FillRule, Paint, Path, PathData};
 
-use crate::common::vdtool::pathparser::parse_path;
-use crate::common::vdtool::res::SVG_D;
-use crate::common::vdtool::{
-    error::VectorDrawableError,
-    res::{PRESENTATION_MAP, SVG_CLIP_RULE, SVG_FILL, SVG_FILL_RULE, SVG_STROKE, SVG_STROKE_WIDTH},
-    svgcolor::color_svg2vd,
-    vdtool::ToVectorDrawable,
-};
+use crate::common::vdtool::vdtool::ToVectorDrawable;
 
-#[derive(Debug)]
-pub struct PathNode {
-    attributes: BTreeMap<String, String>,
-    path_data: Vec<PathDataNode>,
-}
-
-#[derive(Debug)]
-pub struct PathDataNode(pub char, pub Vec<f32>);
-
-impl PathNode {
-    pub fn from(element: &Element) -> Result<Self, VectorDrawableError> {
-        Ok(Self {
-            attributes: attributes(&element)?,
-            path_data: path_data(&element)?,
-        })
-    }
-}
-
-fn attributes(element: &Element) -> Result<BTreeMap<String, String>, VectorDrawableError> {
-    let mut output = BTreeMap::new();
-    for (name, value) in element.attrs() {
-        if PRESENTATION_MAP.contains_key(name) {
-            // As in SvgNode.fillPresentationAttributesInternal
-            let value = match name {
-                SVG_FILL_RULE | SVG_CLIP_RULE => match value {
-                    "nonzero" => "nonZero",
-                    "evenodd" => "evenOdd",
-                    _ => value,
-                },
-                _ => value,
-            };
-            if value.starts_with("url(") {
-                println!("Unsupported URL value in tag <{}>", element.name());
-                continue;
-            }
-            if name == SVG_STROKE_WIDTH && value == "0" {
-                output.remove(SVG_STROKE);
-            }
-            output.insert(name.to_string(), value.to_string());
-        }
-        // TODO: transform tag from SvdNode constructor()
-    }
-    Ok(output)
-}
-
-fn path_data(element: &Element) -> Result<Vec<PathDataNode>, VectorDrawableError> {
-    match element.attr(SVG_D) {
-        Some(d) => Ok(parse_path(d)?),
-        None => Ok(vec![]),
-    }
-}
-
-impl ToVectorDrawable for PathNode {
-    fn to_vector_drawable<W>(&self, w: &mut BufWriter<W>) -> Result<(), std::io::Error>
+impl ToVectorDrawable for Path {
+    fn to_vector_drawable<W>(
+        &self,
+        w: &mut BufWriter<W>,
+        _: Option<&usvg::Node>,
+    ) -> Result<(), std::io::Error>
     where
         W: Write,
     {
-        // First, decide whether we can skip this path, since it has no visible effect.
-        if self.path_data.is_empty() {
-            return Ok(());
-        }
-
-        let (fill_color, empty_fill) = match self.attributes.get(SVG_FILL).map(|s| s.as_str()) {
-            Some("none") | Some("#00000000") | None => ("#ff000000", true),
-            Some(fill_color) => (fill_color, false),
-        };
-        let empty_stroke = match self.attributes.get(SVG_FILL).map(|s| s.as_str()) {
-            Some("none") | Some("#00000000") | None => true,
-            Some(_) => false,
-        };
-        if empty_fill && empty_stroke {
-            return Ok(());
-        }
-
-        // Second, write the color info handling the default values.
         writeln!(w, "{:s$}<path", "", s = 4)?;
-        let indent = format!("{:s$}", "", s = 12);
-        if empty_fill {
-            write!(w, "{}", indent)?;
-            writeln!(w, "android:fillColor=\"{}\"", fill_color)?;
-        }
-        if !empty_stroke && !self.attributes.contains_key(SVG_STROKE_WIDTH) {
-            write!(w, "{}", indent)?;
-            writeln!(w, "android:strokeWidth=\"1\"")?;
+
+        // Add provided stroke params or default
+        if let Some(stroke) = &self.stroke {
+            // Add strokeWidth anyway
+            write_stroke_width(w, stroke.width.value())?;
+
+            // Add strokeColor anyway
+            write_stroke_color(w, &stroke.paint)?;
+
+            // Add strokeAlpha only if it differs from 1.0
+            let stroke_alpha = stroke.opacity.value();
+            if stroke_alpha != 1f64 {
+                write_stroke_alpha(w, stroke_alpha)?;
+            }
+
+            // TODO: add strokeLineCap, strokeLineJoin, strokeMiterLimit
+        } else {
+            write_stroke_width(w, 1f64)?;
         }
 
-        // Last, write the path data and all associated attributes.
-        write!(w, "{}", indent)?;
-        write!(w, "android:pathData=\"")?;
-        write_path_data(&self.path_data, w)?;
-        write!(w, "\"")?;
-        write_attribute_values(&self.attributes, w)?;
-        writeln!(w, " />\n")?;
+        // Add provided fill params of default
+        if let Some(fill) = &self.fill {
+            // Add fillColor anyway
+            write_fill_color(w, &fill.paint)?;
 
-        Ok(())
+            // Add fillAlpha only if it differs from 1.0
+            let fill_alpha = fill.opacity.value();
+            if fill_alpha != 1f64 {
+                write_fill_alpha(w, fill_alpha)?;
+            }
+
+            // Add fillType only if it differs from nonZero
+            match fill.rule {
+                FillRule::EvenOdd => write_fill_type(w, "evenOdd")?,
+                _ => (),
+            };
+        } else {
+            write_fill_color(w, &Paint::Color(Color::black()))?;
+        }
+
+        // Add pathData
+        write_path_data(w, &self.data)?;
+
+        // Close tag
+        writeln!(w, " />")
     }
 }
 
-fn write_attribute_values<W: Write>(
-    attributes: &BTreeMap<String, String>,
-    w: &mut BufWriter<W>,
-) -> Result<(), std::io::Error> {
-    for (name, value) in attributes {
-        // Get android attribute corresponding to svg attribute
-        let android_attribute = match PRESENTATION_MAP.get(name.as_str()) {
-            Some(&android_attribute) => android_attribute,
-            None => continue,
-        };
-
-        let svg_value = value.trim();
-        let vd_value = match color_svg2vd(svg_value) {
-            Some(vd_value) => vd_value,
-            None => {
-                // <- TODO: gradient node
-                match svg_value {
-                    v if v.ends_with("px") => &v[..v.len() - 2],
-                    v => v,
-                }
-            }
-        };
-
-        writeln!(w)?;
-        write!(w, "{:s$}{}=\"{}\"", "", android_attribute, vd_value, s = 12)?;
-    }
-    Ok(())
+fn write_stroke_width<W: Write>(w: &mut BufWriter<W>, value: f64) -> Result<(), std::io::Error> {
+    writeln!(w, "{:s$}android:strokeWidth=\"{:.}\"", "", value, s = 12)
 }
 
-fn write_path_data<W: Write>(
-    d: &Vec<PathDataNode>,
-    w: &mut BufWriter<W>,
-) -> Result<(), std::io::Error> {
-    for node in d {
-        write!(w, "{}", node.0)?;
+fn write_stroke_alpha<W: Write>(w: &mut BufWriter<W>, value: f64) -> Result<(), std::io::Error> {
+    writeln!(w, "{:s$}android:strokeAlpha=\"{:.}\"", "", value, s = 12)
+}
 
-        let len = node.1.len();
-        let mut implicit_line_to = false;
-        let mut line_to_type = ' ';
-        if (node.0 == 'm' || node.0 == 'M') && len > 2 {
-            implicit_line_to = true;
-            line_to_type = if node.0 == 'm' { 'l' } else { 'L' };
-        }
+fn rgb2hex(color: &Color) -> String {
+    format!("#{:02X}{:02X}{:02X}", color.red, color.green, color.blue)
+}
 
-        for j in 0..len {
-            if j > 0 {
-                write!(w, "{}", if j % 2 != 0 { ',' } else { ' ' })?;
-            }
-            if implicit_line_to && j == 2 {
-                write!(w, "{}", line_to_type)?;
-            }
-            let param = node.1.iter().nth(j).unwrap();
-            if param.is_infinite() {
-                panic!("Invalid number: {}", param);
-            }
-            write!(w, "{:.}", param)?;
+fn write_stroke_color<W: Write>(w: &mut BufWriter<W>, value: &Paint) -> Result<(), std::io::Error> {
+    let value = match value {
+        Paint::Color(rgb_color) => rgb2hex(rgb_color),
+        _ => "#ff000000".to_string(),
+    };
+    writeln!(w, "{:s$}android:strokeColor=\"{}\"", "", value, s = 12)
+}
+
+fn write_fill_color<W: Write>(w: &mut BufWriter<W>, value: &Paint) -> Result<(), std::io::Error> {
+    let value = match value {
+        Paint::Color(rgb_color) => rgb2hex(rgb_color),
+        _ => "#ff000000".to_string(),
+    };
+    writeln!(w, "{:s$}android:fillColor=\"{}\"", "", value, s = 12)
+}
+
+fn write_fill_alpha<W: Write>(w: &mut BufWriter<W>, value: f64) -> Result<(), std::io::Error> {
+    writeln!(w, "{:s$}android:fillAlpha=\"{:.}\"", "", value, s = 12)
+}
+
+fn write_fill_type<W: Write>(w: &mut BufWriter<W>, value: &str) -> Result<(), std::io::Error> {
+    writeln!(w, "{:s$}android:fillType=\"{}\"", "", value, s = 12)
+}
+
+fn write_path_data<W: Write>(w: &mut BufWriter<W>, value: &PathData) -> Result<(), std::io::Error> {
+    write!(w, "{:s$}android:pathData=\"", "", s = 12)?;
+    for p in &value.0 {
+        match p {
+            PathSegment::ClosePath => write!(w, "Z")?,
+            PathSegment::MoveTo { x, y } => write!(w, "M{:.},{:.}", x, y)?,
+            PathSegment::LineTo { x, y } => write!(w, "L{:.},{:.}", x, y)?,
+            PathSegment::CurveTo {
+                x1,
+                y1,
+                x2,
+                y2,
+                x,
+                y,
+            } => write!(w, "C{:.},{:.} {:.},{:.} {:.},{:.}", x1, y1, x2, y2, x, y)?,
         }
     }
-    Ok(())
+    write!(w, "\"")
 }
