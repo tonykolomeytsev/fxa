@@ -78,7 +78,7 @@ fn export_icon(
 
     // Convert to VectorDrawable XML
     let image_temporary_file_name =
-        convert_to_vector_drawable(&icon_info, &image_temporary_file_name)?;
+        convert_to_vector_drawable(&icon_info, &image_temporary_file_name, &renderer)?;
 
     // Create drawable dir in res dir of android project
     renderer.render(View::IconDownloaded(icon_info.name.clone()));
@@ -90,7 +90,11 @@ fn export_icon(
         .map_err(|e| AppError::CannotCreateDrawableDir(format!("{}", e)))?;
 
     // Move image from temporary dir to drawable dir of android project
-    let full_final_image_path = format!("{}/{}.svg", full_final_image_dir, &icon_info.res_name);
+    let extension = icon_info.format.extension();
+    let full_final_image_path = format!(
+        "{}/{}.{}",
+        full_final_image_dir, &icon_info.res_name, &extension,
+    );
     move_file(&image_temporary_file_name, &full_final_image_path)
         .map_err(|e| AppError::CannotMoveToDrawableDir(icon_info.name.clone(), format!("{}", e)))?;
 
@@ -102,11 +106,14 @@ fn export_icon(
 fn convert_to_vector_drawable(
     icon_info: &IconInfo,
     image_file_name: &String,
+    renderer: &Renderer,
 ) -> Result<String, AppError> {
     match icon_info.format {
         IconFormat::Xml => {
+            renderer.render(View::ConvertingToXml(icon_info.name.clone()));
             let new_icon_path =
                 convert_svg_to_xml(image_file_name).map_err(AppError::CannotConvertToXml)?;
+            renderer.render(View::ConvertedToXml(icon_info.name.clone()));
             Ok(new_icon_path)
         }
         IconFormat::Svg => Ok(image_file_name.clone()),
