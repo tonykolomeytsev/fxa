@@ -3,6 +3,7 @@
 <img src="images/gh-logo.png"/><br/>
 
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/tonykolomeytsev/fxa?label=version) 
+![GitHub license](https://img.shields.io/github/license/tonykolomeytsev/fxa)
 
 A multi-platform tool for exporting resources from Figma to an Android project.
 
