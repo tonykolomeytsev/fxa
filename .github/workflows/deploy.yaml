@@ -66,7 +66,7 @@ jobs:
           args: --release --target x86_64-unknown-linux-gnu
 
       - name: Move artifact to zip
-        run: zip fxa-x86_64-unknown-linux-gnu.zip target/release/*
+        run: zip fxa-x86_64-unknown-linux-gnu.zip /home/runner/work/fxa/fxa
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
