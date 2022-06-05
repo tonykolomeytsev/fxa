@@ -60,7 +60,7 @@ impl ToVectorDrawable for Path {
         write_path_data(w, &self.data)?;
 
         // Close tag
-        writeln!(w, " />")
+        writeln!(w, " />\n")
     }
 }
 
