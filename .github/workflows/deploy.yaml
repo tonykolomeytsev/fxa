@@ -139,6 +139,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./windows/fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.tar.gz
+          asset_path: ./windows/fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip
           asset_content_type: application/gzip
-          asset_name: fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.tar.gz
+          asset_name: fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip
