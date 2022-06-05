@@ -9,25 +9,15 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 ## Features
 
-- **The util works on macOS, Windows, Linux systems, etc.**
+- 🥑 **fxn** convert images to WEBP and icons to Android Vector Drawable XML.
 
-    You can build it for any platform supported by the Rust compiler.
+- 🥰 **fxn** works on macOS, Windows and Linux. One small executable.
 
-- **No external dependencies.**
+- 🚀 No external dependencies. **No webp** package, **no java** and **no vd-tool** required.
 
-    You don't need to install the webp package to convert images to webp. You don't need to install java and run vd-tool to convert svg to xml.
+- 🤖 [Figma-export](https://github.com/RedMadRobot/figma-export)-like api. Similar YAML config file, similar CLI arguments.
 
-- **Figma-export-like api**
-
-    Similar YAML config file, similar CLI arguments.
-
-- **Good error description**
-
-    There will always be a clear explanation after the inscription Error.
-
-- **Just one small executable**
-
-- **One error does not interrupt the entire export process**
+- 🧭 Good error description. There will always be a clear explanation after the inscription Error.
 
 ## How to install?
 
