@@ -9,6 +9,7 @@ pub enum View {
     ConvertingToXml(String),
     ConvertedToXml(String),
     IconExported(String),
+    ErrorWithSuggestions(String, Vec<String>),
     Error(String),
     Done { message: Option<String> },
 }
@@ -54,6 +55,19 @@ impl Renderable for View {
                     "{} icon {}",
                     "Exported".indent().bold().green(),
                     &image_name
+                )
+            }
+            View::ErrorWithSuggestions(description, suggestions) => {
+                let suggestions = suggestions
+                    .iter()
+                    .map(|s| format!("{:i$} `{}`", "", s, i = 12))
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                format!(
+                    "{} {}\n{}",
+                    "Error".indent().bold().red(),
+                    &description,
+                    suggestions,
                 )
             }
             View::Error(description) => {

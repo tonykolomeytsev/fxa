@@ -7,6 +7,7 @@ use crate::common::fileutils::{create_dir, move_file};
 use crate::common::http_client::create_http_client;
 use crate::common::renderer::Renderer;
 use crate::common::res_name::to_res_name;
+use crate::common::suggestions::generate_name_suggections;
 use crate::common::vdtool::vdtool::convert_svg_to_xml;
 use crate::feature_icons::view::View;
 use crate::models::config::{AppConfig, IconFormat, ImageFormat};
@@ -38,9 +39,15 @@ pub fn export_icons(token: &String, image_names: &Vec<String>, yaml_config_path:
             res_name: to_res_name(&image_name),
             format: app_config.android.icons.format.clone(),
         };
-        if let Err(e) = export_icon(&api, &app_config, &icon_info, &names_to_ids, &renderer) {
-            renderer.render(View::Error(format!("{}", e)))
-        };
+        match export_icon(&api, &app_config, &icon_info, &names_to_ids, &renderer) {
+            Err(AppError::ImageMissingInFrame(name, frame, Some(suggestions))) => renderer
+                .render(View::ErrorWithSuggestions(
+                    format!("An icon `{}` is missing in frame `{}`, but there are icons with similar names:", name, frame),
+                    suggestions,
+                )),
+            Err(e) => renderer.render(View::Error(e.to_string())),
+            Ok(()) => (),
+        }
         renderer.new_line();
     }
 
@@ -55,12 +62,17 @@ fn export_icon(
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     let file_id = &app_config.figma.file_id;
-    let frame_name = &app_config.common.images.figma_frame_name;
+    let frame_name = &app_config.common.icons.figma_frame_name;
 
     // Find image frame id by its name
-    let node_id = names_to_ids
-        .get(&icon_info.name)
-        .ok_or_else(|| AppError::ImageMissingInFrame(icon_info.name.clone(), frame_name.clone()))?;
+    let node_id = names_to_ids.get(&icon_info.name).ok_or_else(|| {
+        let available_names = names_to_ids
+            .iter()
+            .map(|(k, _)| k.clone())
+            .collect::<Vec<String>>();
+        let suggestions = generate_name_suggections(&icon_info.name, &available_names);
+        AppError::ImageMissingInFrame(icon_info.name.clone(), frame_name.clone(), suggestions)
+    })?;
 
     // Get download url for exported image
     renderer.render(View::FetchingIcon(icon_info.name.clone()));

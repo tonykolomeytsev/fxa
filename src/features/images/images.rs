@@ -7,6 +7,7 @@ use crate::common::fileutils::{create_dir, move_file};
 use crate::common::http_client::create_http_client;
 use crate::common::renderer::Renderer;
 use crate::common::res_name::to_res_name;
+use crate::common::suggestions::generate_name_suggections;
 use crate::common::webp;
 use crate::feature_images::view::View;
 use crate::models::config::{AppConfig, ImageFormat};
@@ -44,9 +45,30 @@ pub fn export_images(token: &String, image_names: &Vec<String>, yaml_config_path
                 format: app_config.android.images.format.clone(),
                 res_name: to_res_name(&image_name),
             };
-            if let Err(e) = export_image(&api, &app_config, &image_info, &names_to_ids, &renderer) {
-                renderer.render(View::Error(format!("{}", e)))
-            };
+            let export_result =
+                export_image(&api, &app_config, &image_info, &names_to_ids, &renderer);
+            // Render export result in terminal and stop export of this image, if it is missing in frame
+            // TODO: simplify
+            match export_result {
+                Err(AppError::ImageMissingInFrame(name, frame, Some(suggestions))) => {
+                    renderer.render(View::ErrorWithSuggestions(
+                        format!("An image `{}` is missing in frame `{}`, but there are images with similar names:", name, frame),
+                        suggestions,
+                    ));
+                    renderer.new_line();
+                    break;
+                }
+                Err(AppError::ImageMissingInFrame(name, frame, None)) => {
+                    renderer.render(View::Error(format!(
+                        "An image `{}` is missing in frame `{}`",
+                        name, frame,
+                    )));
+                    renderer.new_line();
+                    break;
+                }
+                Err(e) => renderer.render(View::Error(e.to_string())),
+                Ok(()) => (),
+            }
             renderer.new_line();
         }
     }
@@ -67,7 +89,13 @@ fn export_image(
 
     // Find image frame id by its name
     let node_id = names_to_ids.get(&image_info.name).ok_or_else(|| {
-        AppError::ImageMissingInFrame(image_info.name.clone(), frame_name.clone())
+        // If we can't find desired image by name, offer a suggestions
+        let available_names = names_to_ids
+            .iter()
+            .map(|(k, _)| k.clone())
+            .collect::<Vec<String>>();
+        let suggestions = generate_name_suggections(&image_info.name, &available_names);
+        AppError::ImageMissingInFrame(image_info.name.clone(), frame_name.clone(), suggestions)
     })?;
 
     // Get download url for exported image

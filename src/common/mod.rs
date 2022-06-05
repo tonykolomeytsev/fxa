@@ -4,5 +4,6 @@ pub mod fileutils;
 pub mod http_client;
 pub mod renderer;
 pub mod res_name;
+pub mod suggestions;
 pub mod vdtool;
 pub mod webp;
