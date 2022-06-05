@@ -29,13 +29,31 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 - **One error does not interrupt the entire export process**
 
-## How to use?
+## How to install?
 
 > Installation via package managers will be available later.
 
-### Building
+### Installation on MacOS
 
-Build project with `cargo` or `rustc`:
+Just run on terminal:
+
+```bash
+curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/macos.sh | bash
+```
+
+### Installation on Ubuntu
+
+Just run on terminal:
+
+```bash
+curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/linux.sh | bash
+```
+
+### Build source code
+
+Install Rust compiler: https://www.rust-lang.org/tools/install
+
+And then clone and build the project with `cargo`:
 
 ```bash
 cargo build --release
@@ -43,7 +61,7 @@ cargo build --release
 
 And then take the compiled program `{project_root}/target/release/fxn`
 
-### Running
+## How to use?
 
 Use `fxn --help` for help :)
 
@@ -53,18 +71,18 @@ Use `fxn --help` for help :)
 fxn config for_images.yaml
 ```
 
-And then fill out the `for_images.yaml` file with your data (figma file id, frame names etc.).
+And then fill out the `config.yaml` file with your data (figma file id, frame names etc.).
 
 #### Export images (PNG, WEBP, SVG)
 
 ```bash
-fxn images -c for_images.yaml img_lol img_kek ...
+fxn images -c config.yaml img_lol "img_kek" ...
 ```
 
 #### Export icons (Vector Drawable XML, SVG)
 
 ```bash
-fxn icons -c for_icons.yaml ic_24/icon1 ic_16/icon2 ...
+fxn icons -c config.yaml ic_24/icon1 ic_16/icon2 ...
 ```
 
 ### What about figma personal token?
