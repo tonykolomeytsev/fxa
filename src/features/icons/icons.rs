@@ -32,11 +32,11 @@ pub fn export_icons(token: &String, image_names: &Vec<String>, yaml_config_path:
     };
     let (app_config, names_to_ids) = (fetcher_entry.app_config, fetcher_entry.image_names_to_ids);
 
-    for image_name in image_names {
+    for icon_name in image_names {
         // Just to not to pass long parameter list to export_icon function
         let icon_info = IconInfo {
-            name: image_name.clone(),
-            res_name: to_res_name(&image_name),
+            name: icon_name.clone(),
+            res_name: to_res_name(&icon_name),
             format: app_config.android.icons.format.clone(),
         };
         match export_icon(&api, &app_config, &icon_info, &names_to_ids, &renderer) {
@@ -64,7 +64,7 @@ fn export_icon(
     let file_id = &app_config.figma.file_id;
     let frame_name = &app_config.common.icons.figma_frame_name;
 
-    // Find image frame id by its name
+    // Find icon frame id by its name
     let node_id = names_to_ids.get(&icon_info.name).ok_or_else(|| {
         let available_names = names_to_ids
             .iter()
@@ -74,40 +74,40 @@ fn export_icon(
         AppError::ImageMissingInFrame(icon_info.name.clone(), frame_name.clone(), suggestions)
     })?;
 
-    // Get download url for exported image
+    // Get download url for exported icon
     renderer.render(View::FetchingIcon(icon_info.name.clone()));
-    let image_download_url =
+    let icon_download_url =
         api.get_image_download_url(file_id, node_id, 1.0f32, &ImageFormat::Svg)?;
 
-    // Download image from gotten url to app's TEMPORARY dir
+    // Download icon from gotten url to app's TEMPORARY dir
     renderer.render(View::DownloadingIcon(icon_info.name.clone()));
-    let image_temporary_file_name = api.get_image(
-        &image_download_url,
+    let icon_temporary_file_name = api.get_image(
+        &icon_download_url,
         &icon_info.res_name,
         &String::new(),
         &ImageFormat::Svg,
     )?;
 
     // Convert to VectorDrawable XML
-    let image_temporary_file_name =
-        convert_to_vector_drawable(&icon_info, &image_temporary_file_name, &renderer)?;
+    let icon_temporary_file_name =
+        convert_to_vector_drawable(&icon_info, &icon_temporary_file_name, &renderer)?;
 
     // Create drawable dir in res dir of android project
     renderer.render(View::IconDownloaded(icon_info.name.clone()));
     let res_path = &app_config
         .main_res_icons()
         .expect("Validation is done in fetcher");
-    let full_final_image_dir = format!("{}/drawable", &res_path);
-    create_dir(&full_final_image_dir)
+    let full_final_icon_dir = format!("{}/drawable", &res_path);
+    create_dir(&full_final_icon_dir)
         .map_err(|e| AppError::CannotCreateDrawableDir(format!("{}", e)))?;
 
-    // Move image from temporary dir to drawable dir of android project
+    // Move icon from temporary dir to drawable dir of android project
     let extension = icon_info.format.extension();
-    let full_final_image_path = format!(
+    let full_final_icon_path = format!(
         "{}/{}.{}",
-        full_final_image_dir, &icon_info.res_name, &extension,
+        full_final_icon_dir, &icon_info.res_name, &extension,
     );
-    move_file(&image_temporary_file_name, &full_final_image_path)
+    move_file(&icon_temporary_file_name, &full_final_icon_path)
         .map_err(|e| AppError::CannotMoveToDrawableDir(icon_info.name.clone(), format!("{}", e)))?;
 
     // Tell the user that we are done
@@ -117,17 +117,17 @@ fn export_icon(
 
 fn convert_to_vector_drawable(
     icon_info: &IconInfo,
-    image_file_name: &String,
+    icon_file_name: &String,
     renderer: &Renderer,
 ) -> Result<String, AppError> {
     match icon_info.format {
         IconFormat::Xml => {
             renderer.render(View::ConvertingToXml(icon_info.name.clone()));
             let new_icon_path =
-                convert_svg_to_xml(image_file_name).map_err(AppError::CannotConvertToXml)?;
+                convert_svg_to_xml(icon_file_name).map_err(AppError::CannotConvertToXml)?;
             renderer.render(View::ConvertedToXml(icon_info.name.clone()));
             Ok(new_icon_path)
         }
-        IconFormat::Svg => Ok(image_file_name.clone()),
+        IconFormat::Svg => Ok(icon_file_name.clone()),
     }
 }
