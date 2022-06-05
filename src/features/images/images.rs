@@ -37,7 +37,7 @@ pub fn export_images(token: &String, image_names: &Vec<String>, yaml_config_path
     let image_scales = &app_config.android.images.scales;
     for image_name in image_names {
         for (scale_name, scale_value) in image_scales {
-            // Just to not to pass long parameter list to export_icon function
+            // Just to not to pass long parameter list to export_image function
             let image_info = ImageInfo {
                 name: image_name.clone(),
                 scale_name: scale_name.clone(),
@@ -84,12 +84,12 @@ fn export_image(
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     let file_id = &app_config.figma.file_id;
-    let frame_name = &app_config.common.images.figma_frame_name;
     let quality = app_config.android.images.webp_options.quality;
 
     // Find image frame id by its name
     let node_id = names_to_ids.get(&image_info.name).ok_or_else(|| {
         // If we can't find desired image by name, offer a suggestions
+        let frame_name = &app_config.common.images.figma_frame_name;
         let available_names = names_to_ids
             .iter()
             .map(|(k, _)| k.clone())

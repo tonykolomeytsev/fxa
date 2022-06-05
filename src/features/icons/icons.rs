@@ -62,10 +62,11 @@ fn export_icon(
     renderer: &Renderer,
 ) -> Result<(), AppError> {
     let file_id = &app_config.figma.file_id;
-    let frame_name = &app_config.common.icons.figma_frame_name;
 
     // Find icon frame id by its name
     let node_id = names_to_ids.get(&icon_info.name).ok_or_else(|| {
+        // If we can't find desired icon by name, offer a suggestions
+        let frame_name = &app_config.common.icons.figma_frame_name;
         let available_names = names_to_ids
             .iter()
             .map(|(k, _)| k.clone())
