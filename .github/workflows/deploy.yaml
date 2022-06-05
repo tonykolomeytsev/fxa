@@ -53,6 +53,12 @@ jobs:
         with:
           command: build
           args: --release --target x86_64-unknown-linux-gnu
+      - name: Move artifact to zip
+        run: zip fxa-x86_64-unknown-linux-gnu.zip target/release/fxa
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: fxa-x86_64-unknown-linux-gnu.zip
 
   # windows_x86_x64:
   #   name: Windows x86_x64
