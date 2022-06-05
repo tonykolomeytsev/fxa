@@ -53,12 +53,13 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install musl-tools -y
 
+      # About --features vendored read here:
+      # https://github.com/sfackler/rust-openssl/issues/980
       - name: Build (Linux)
         if: matrix.build == 'linux'
         run: |
-          export CC_x86_64_unknown_linux_musl=x86_64-linux-musl-gcc
           rustup target add ${{ env.LINUX_TARGET }}
-          cargo build --release --target ${{ env.LINUX_TARGET }}
+          cargo build --release --target ${{ env.LINUX_TARGET }} --features vendored
 
       - name: Build (Windows)
         if: matrix.build == 'windows'
