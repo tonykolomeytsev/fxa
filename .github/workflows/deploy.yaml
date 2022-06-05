@@ -44,17 +44,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
+      - name: Cache build files
+        uses: actions/cache@v1
+        with:
+          path: build
+          key: ${{ runner.OS }}-build-${{ hashFiles('**/*.rs') }}
+          restore-keys: |
+            ${{ runner.OS }}-build-${{ env.cache-name }}-
+            ${{ runner.OS }}-build-
+
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           target: x86_64-unknown-linux-gnu
           override: true
+
       - uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --target x86_64-unknown-linux-gnu
+
       - name: Move artifact to zip
-        run: zip fxa-x86_64-unknown-linux-gnu.zip target/release/fxa
+        run: zip fxa-x86_64-unknown-linux-gnu.zip target/release/*
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
