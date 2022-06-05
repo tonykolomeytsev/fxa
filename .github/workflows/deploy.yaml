@@ -30,6 +30,9 @@ jobs:
           - build: windows
             os: windows-latest
             rust: stable
+          - build: macos
+            os: macos-latest
+            rust: stable
 
     steps:
       - uses: actions/checkout@v2
@@ -53,6 +56,10 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install musl-tools -y
 
+      - name: Install p7zip (MacOS)
+        if: matrix.build == 'macos'
+        run: brew install p7zip
+
       # About --features vendored read here:
       # https://github.com/sfackler/rust-openssl/issues/980
       - name: Build (Linux)
@@ -66,6 +73,10 @@ jobs:
         run: cargo build --release
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
+
+      - name: Build (MacOS)
+        if: matrix.build == 'macos'
+        run: cargo build --release
 
       - name: Create artifact directory
         run: |
@@ -86,6 +97,13 @@ jobs:
           mv ./target/release/${{ env.RELEASE_BIN }}.exe ./dist/${{ env.RELEASE_BIN }}.exe
           mv ${{ env.RELEASE_ADDS }} ./dist
           7z a -tzip ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip ./dist
+
+      - name: Create tarball (MacOS)
+        if: matrix.build == 'macos'
+        run: |
+          mv ./target/release/${{ env.RELEASE_BIN }} ./dist/${{ env.RELEASE_BIN }}
+          mv ${{ env.RELEASE_ADDS }} ./dist
+          7z a -ttar -so -an ./dist | 7z a -si ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
 
       - name: Upload Zip
         uses: actions/upload-artifact@v1
@@ -123,6 +141,11 @@ jobs:
         with:
           name: windows
 
+      - name: Download MacOS tarball
+        uses: actions/download-artifact@v1
+        with:
+          name: macos
+
       - name: Release Linux tarball
         uses: actions/upload-release-asset@v1
         env:
@@ -142,3 +165,13 @@ jobs:
           asset_path: ./windows/fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip
           asset_content_type: application/gzip
           asset_name: fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip
+
+      - name: Release MacOS tarball
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./macos/fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
+          asset_content_type: application/gzip
+          asset_name: fxa-${{ steps.get_version.outputs.VERSION }}-${{ env.MACOS_TARGET }}.tar.gz
