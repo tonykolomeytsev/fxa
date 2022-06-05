@@ -19,6 +19,8 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 - 🧭 Good error description. There will always be a clear explanation after the inscription Error.
 
+<img src="images/gh-demo.png"/><br/>
+
 ## How to install?
 
 > Installation via package managers will be available later.
