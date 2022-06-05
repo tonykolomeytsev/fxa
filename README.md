@@ -49,6 +49,10 @@ Just run on terminal:
 curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/linux.sh | bash
 ```
 
+### Installation on Windows
+
+So far, there is no simple installation guide. Download the [zip archive from here](https://github.com/tonykolomeytsev/fxa/releases/latest/download/fxa-v0.1.0-test9-x86_64-pc-windows-msvc.zip) and unzip it. Inside there will be a fxa.exe program, you can run it from the terminal.
+
 ### Build source code
 
 Install Rust compiler: https://www.rust-lang.org/tools/install

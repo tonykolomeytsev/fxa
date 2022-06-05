@@ -9,6 +9,6 @@ cleanup() {
 
 trap 'cleanup' EXIT
 
-sudo curl -LJO https://github.com/tonykolomeytsev/fxa/releases/download/v0.1.0-test9/fxa-v0.1.0-test9-x86_64-unknown-linux-musl.tar.gz
+sudo curl -LJO https://github.com/tonykolomeytsev/fxa/releases/latest/download/fxa-v0.1.0-test9-x86_64-unknown-linux-musl.tar.gz
 tar -xzvf fxa-v0.1.0-test9-x86_64-unknown-linux-musl.tar.gz
 sudo mv ./dist/fxa /usr/local/bin/fxa
