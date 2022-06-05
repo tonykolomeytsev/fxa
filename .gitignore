@@ -1,6 +1,6 @@
 /target
 /res/*
 !/res/default_config.yaml
-/.fxn
+/.fxa
 fxn_default_config.yaml
 .DS_Store

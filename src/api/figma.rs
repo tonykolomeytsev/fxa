@@ -187,7 +187,7 @@ where
 }
 
 fn load_from_cache<T: DeserializeOwned>(id: &String) -> Result<T, AppError> {
-    let file_name = format!(".fxn/cache_{}.json", &id);
+    let file_name = format!("{}/cache_{}.json", TEMP_DIR_PATH, &id);
     File::open(&file_name)
         .map_err(|_| AppError::LoadFromCache)
         .map(|file| BufReader::new(file))
@@ -195,7 +195,7 @@ fn load_from_cache<T: DeserializeOwned>(id: &String) -> Result<T, AppError> {
 }
 
 fn save_to_cache<T: Serialize>(value: T, id: &String) -> Result<(), AppError> {
-    let file_name = format!(".fxn/cache_{}.json", &id);
+    let file_name = format!("{}/cache_{}.json", TEMP_DIR_PATH, &id);
     match create_temp_dir() {
         Ok(()) => match File::create(&file_name).map(|it| serde_json::to_writer(&it, &value)) {
             Ok(_) => Ok(()),
