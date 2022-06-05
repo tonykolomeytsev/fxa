@@ -36,6 +36,6 @@ pub enum Command {
         #[clap(default_value_t = String::from("fxn_default_config.yaml"))]
         new_config_filename: String,
     },
-    /// Clear temporary `.fxn` dir
+    /// Clear temporary `.fxa` dir
     Cleanup,
 }
