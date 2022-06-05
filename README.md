@@ -11,7 +11,7 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 - 🥑 **fxn** convert images to WEBP and icons to Android Vector Drawable XML.
 
-- 🥰 **fxn** works on macOS, Windows and Linux. One small executable.
+- 🥰 **fxn** works on macOS, Windows and Linux. One small executable for each platform.
 
 - 🚀 No external dependencies. **No webp** package, **no java** and **no vd-tool** required.
 
