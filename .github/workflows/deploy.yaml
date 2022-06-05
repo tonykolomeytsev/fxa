@@ -28,7 +28,7 @@ jobs:
             os: ubuntu-latest
             rust: stable
           - build: windows
-            os: ubuntu-latest
+            os: windows-latest
             rust: stable
 
     steps:
