@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: fxa-x86_64-unknown-linux-gnu
-          path: target/
+          path: target/release/
 
   # windows_x86_x64:
   #   name: Windows x86_x64
