@@ -4,7 +4,7 @@ figma:
   fileId: YOUR_FIGMA_FILE_ID
   # [Optional] Page name inside the Figma file.
   # If you do not specify this parameter, the search for resources will be performed ON ALL PAGES of the file.
-  pageName: Resources
+# pageName: Resources
 
 # [Optional] Default values for `common` section are shown below
 common:
