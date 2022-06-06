@@ -70,7 +70,7 @@ And then fill `config.yaml` with your data. **Required fields:**
 
     * `android.icons.mainRes` — Path to the `main/res` folder of your Gradle module with icons.
 
-You also need to provide Figma with a personal access token in order for the app to export resources from Figma.
+You also need to provide Figma personal access token for the app to export resources from Figma.
 
 How to get personal access token: https://www.figma.com/developers/api#access-tokens
 
