@@ -25,21 +25,15 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 > Installation via package managers will be available later.
 
-### Installation on MacOS
+### Installation on MacOS and Ubuntu
 
 Just run on terminal:
 
-```bash
-curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/macos.sh | bash
-```
+* `curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/macos.sh | bash` — for MacOS
 
-### Installation on Ubuntu
+* `curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/linux.sh | bash` — for Ubuntu
 
-Just run on terminal:
-
-```bash
-curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/linux.sh | bash
-```
+* Or download and install suitable executable from [lates release](https://github.com/tonykolomeytsev/fxa/releases/latest).
 
 ### Installation on Windows
 
