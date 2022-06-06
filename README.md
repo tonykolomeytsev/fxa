@@ -99,7 +99,7 @@ scales:
 
 You can specify the format for the exported image with field `android.images.format`. The format can be `png`, `webp`, `svg`. Default if `webp`. Webp compression level can be specified in parameter `android.images.webpOptions.quality`. Default quality is `85` (%).
 
-**To export run:**
+To export run:
 
 ```bash
 fxa images -c config.yaml img_lol "img_kek" ...
@@ -109,7 +109,7 @@ fxa images -c config.yaml img_lol "img_kek" ...
 
 Icons will be loaded into `drawable` directory. You can specify the format for the exported icon with field `android.icons.format`. The format can be `svg` or `xml` (Android Vector Drawable). Default if `xml`.
 
-**To export run:**
+To export run:
 
 ```bash
 fxa icons -c config.yaml ic_24/icon1 ic_16/icon2 ...
