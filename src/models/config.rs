@@ -214,6 +214,13 @@ impl ImageFormat {
             ImageFormat::Webp => "webp".to_string(),
         }
     }
+
+    pub fn is_svg(&self) -> bool {
+        match &self {
+            ImageFormat::Svg => true,
+            _ => false,
+        }
+    }
 }
 
 /// Part of App config from YAML:
