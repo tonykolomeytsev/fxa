@@ -1,4 +1,4 @@
-# fxa
+# fxa ✨ figma export for android (as it should be)
 
 <img src="images/gh-logo.png"/><br/>
 
