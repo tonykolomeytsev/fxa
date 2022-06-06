@@ -37,7 +37,7 @@ Just run on terminal:
 
 ### Installation on Windows
 
-So far, there is no simple installation guide. Download the [zip archive from here](https://github.com/tonykolomeytsev/fxa/releases/latest/download/fxa-v0.1.0-x86_64-pc-windows-msvc.zip) and unzip it. Inside there will be a `fxa.exe` program, you can run it from the terminal.
+So far, there is no simple installation guide. Download the [zip archive from here](https://github.com/tonykolomeytsev/fxa/releases/latest/download/fxa-x86_64-pc-windows-msvc.zip) and unzip it. Inside there will be a `fxa.exe` program, you can run it from the terminal.
 
 ### Build source code
 
