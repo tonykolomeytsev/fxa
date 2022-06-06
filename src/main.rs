@@ -18,13 +18,15 @@ fn main() {
             new_config_filename,
         } => feature_config::create_default_config(&new_config_filename),
         Command::Images {
-            names,
+            token,
             path_to_config,
-        } => feature_images::export_images(&args.token, &names, &path_to_config),
+            names,
+        } => feature_images::export_images(&token, &names, &path_to_config),
         Command::Icons {
-            names,
+            token,
             path_to_config,
-        } => feature_icons::export_icons(&args.token, &names, &path_to_config),
+            names,
+        } => feature_icons::export_icons(&token, &names, &path_to_config),
         Command::Cleanup => feature_cleanup::cleanup(),
     }
 }
