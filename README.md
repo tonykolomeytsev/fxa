@@ -9,9 +9,9 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 ## Features
 
-- 🥑 **fxn** convert images to WEBP and icons to Android Vector Drawable XML.
+- 🥑 **fxa** convert images to WEBP and icons to Android Vector Drawable XML.
 
-- 🥰 **fxn** works on macOS, Windows and Linux. One small executable for each platform.
+- 🥰 **fxa** works on macOS, Windows and Linux. One small executable for each platform.
 
 - 🚀 No external dependencies. **No webp** package, **no java** and **no vd-tool** required.
 
@@ -49,16 +49,16 @@ And then clone and build the project with `cargo`:
 cargo build --release
 ```
 
-And then take the compiled program `{project_root}/target/release/fxn`
+And then take the compiled program `{project_root}/target/release/fxa`
 
 ## How to use?
 
-Use `fxn --help` for help :)
+Use `fxa --help` for help :)
 
 Settings for the utility are passed not only through command line arguments, but also using a YAML file. If you don't have this YAML file yet, you can generate it yourself and fill in the required fields in it. To generate the file, run:
 
 ```bash
-fxn config config.yaml
+fxa config config.yaml
 ```
 
 And then fill `config.yaml` with your data. **Required fields:**
@@ -102,17 +102,17 @@ You can specify the format for the exported image with field `android.images.for
 **To export run:**
 
 ```bash
-fxn images -c config.yaml img_lol "img_kek" ...
+fxa images -c config.yaml img_lol "img_kek" ...
 ```
 
-#### Export icons (Vector Drawable XML, SVG)
+#### Export icons
 
 Icons will be loaded into `drawable` directory. You can specify the format for the exported icon with field `android.icons.format`. The format can be `svg` or `xml` (Android Vector Drawable). Default if `xml`.
 
 **To export run:**
 
 ```bash
-fxn icons -c config.yaml ic_24/icon1 ic_16/icon2 ...
+fxa icons -c config.yaml ic_24/icon1 ic_16/icon2 ...
 ```
 
 ### What else should I know?
@@ -124,7 +124,7 @@ This is done because accessing the file through the Figma API can take a very lo
 But if something has been updated in the original Figma document, then you won't see those changes because of the cache. Therefore, here is the command that clears the cache:
 
 ```bash
-fxn cleanup
+fxa cleanup
 ```
 
 ## Project status
