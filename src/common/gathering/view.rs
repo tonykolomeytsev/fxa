@@ -25,7 +25,7 @@ impl Renderable for View {
                 name
             ),
             View::FoundThemed(name) => format!(
-                "{} resource with name `{}` for light and dark theme\n",
+                "{} resource with name `{}` for light and dark themes\n",
                 "Found".indent().bold().green(),
                 name
             ),
