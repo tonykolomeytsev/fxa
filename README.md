@@ -127,6 +127,10 @@ But if something has been updated in the original Figma document, then you won't
 fxa cleanup
 ```
 
+## Limitations
+
+At the moment, the utility is guaranteed to correctly convert SVG icons to XML only if the icons do not have gradient fills and all elements (such as `<rect>`) have already been converted to `<path>`.
+
 ## Project status
 
 The project is in progress and is being developed just for fun. Additional features will be added in the future.
