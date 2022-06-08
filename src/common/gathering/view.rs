@@ -44,11 +44,12 @@ impl Renderable for View {
                     .collect::<Vec<String>>()
                     .join("\n");
                 format!(
-                    "{} resource with name `{}` in frame `{}`,\n {}\n{}\n",
+                    "{} resource with name `{}` in frame `{}`,\n {}{}\n{}\n",
                     "Missing".indent().bold().red(),
                     resource_name,
                     frame_name,
-                    "but there are resources with similar names:".indent(),
+                    "".indent(),
+                    "but there are resources with similar names:",
                     suggestions,
                 )
             }

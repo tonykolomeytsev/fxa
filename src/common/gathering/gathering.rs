@@ -101,7 +101,7 @@ where
                             user_name: name.clone(),
                             figma_name: name.clone(),
                             figma_id: names_to_ids
-                                .get(user_name)
+                                .get(&name)
                                 .expect("Because map already contains key")
                                 .clone(),
                             scale_name,
