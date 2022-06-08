@@ -430,7 +430,6 @@ dependencies = [
  "clap",
  "crossterm",
  "image",
- "lazy_static",
  "openssl-sys",
  "reqwest",
  "serde",

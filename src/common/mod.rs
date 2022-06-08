@@ -1,9 +1,11 @@
 pub mod error;
 pub mod fetcher;
 pub mod fileutils;
+pub mod gathering;
 pub mod http_client;
 pub mod renderer;
 pub mod res_name;
+pub mod suffixes;
 pub mod suggestions;
 pub mod vdtool;
 pub mod webp;
