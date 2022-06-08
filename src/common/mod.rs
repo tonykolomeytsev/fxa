@@ -1,5 +1,5 @@
 pub mod error;
-pub mod fetcher;
+pub mod fetching;
 pub mod fileutils;
 pub mod gathering;
 pub mod http_client;

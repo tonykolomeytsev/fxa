@@ -1,6 +1,6 @@
 use crate::api::figma::FigmaApi;
 use crate::common::error::AppError;
-use crate::common::fetcher::{fetch, FetcherTarget};
+use crate::common::fetching::{fetch, FetcherTarget};
 use crate::common::fileutils::{create_dir, move_file};
 use crate::common::gathering::gathering::gather_names;
 use crate::common::http_client::create_http_client;

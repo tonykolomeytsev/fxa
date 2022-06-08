@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::api::figma::FigmaApi;
 use crate::common::error::AppError;
-use crate::common::fetcher::{fetch, FetcherTarget};
+use crate::common::fetching::{fetch, FetcherTarget};
 use crate::common::fileutils::{create_dir, move_file};
 use crate::common::http_client::create_http_client;
 use crate::common::renderer::Renderer;

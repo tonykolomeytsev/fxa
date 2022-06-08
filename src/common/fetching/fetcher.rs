@@ -5,7 +5,7 @@ use crate::models::figma::Frame;
 use crate::models::{config::AppConfig, figma::Document};
 
 use crate::common::error::AppError;
-use crate::common::fetcher::view::View;
+use crate::common::fetching::view::View;
 use crate::common::renderer::Renderer;
 
 pub struct FetcherEntry {
