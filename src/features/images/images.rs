@@ -14,7 +14,6 @@ use crate::models::config::{AppConfig, ImageFormat};
 struct ImageInfo {
     id: String,
     user_name: String,
-    figma_name: String,
     format: ImageFormat,
     res: ResourceInfo,
 }
@@ -68,7 +67,6 @@ pub fn export_images(token: &String, image_names: &[String], yaml_config_path: &
         |e| ImageInfo {
             id: e.figma_id,
             user_name: e.user_name.clone(),
-            figma_name: e.figma_name,
             format: format.clone(),
             res: ResourceInfo {
                 name: to_res_name(&e.user_name),
@@ -121,7 +119,7 @@ fn export_image(
     let image_format = &app_config.android.images.format;
     let image_temporary_file_name = api.get_image(
         &image_download_url,
-        &to_res_name(&image.figma_name),
+        &image.res.name,
         &image.res.scale.name,
         &image_format,
     )?;

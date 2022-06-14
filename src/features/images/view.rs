@@ -16,31 +16,31 @@ impl Renderable for View {
     fn render(&self) -> String {
         match self {
             View::FetchingImage(image_name, scale) => format!(
-                "{} download url for image {} for {}",
+                "{} download url for image {} ({})",
                 "Fetching".indent().bold().cyan(),
                 &image_name,
                 &scale,
             ),
             View::DownloadingImage(image_name, scale) => format!(
-                "{} image {} for {}",
+                "{} image {} ({})",
                 "Downloading".indent().bold().cyan(),
                 &image_name,
                 &scale,
             ),
             View::ConvertingToWebp(image_name, scale) => format!(
-                "{} to WEBP image {} for {}...",
+                "{} to WEBP image {} ({})...",
                 "Converting".indent().bold().cyan(),
                 &image_name,
                 &scale,
             ),
             View::ConvertedToWebp(image_name, scale) => format!(
-                "{} to WEBP image {} for {}",
+                "{} to WEBP image {} ({})",
                 "Converted".indent().bold().green(),
                 &image_name,
                 &scale,
             ),
             View::ImageExported(image_name, scale) => format!(
-                "{} image {} to {}",
+                "{} image {} ({})",
                 "Exported".indent().bold().green(),
                 &image_name,
                 &scale,

@@ -94,9 +94,6 @@ pub enum AppError {
     /// Export Common
     ///
 
-    #[error("An image `{0}` is missing in frame `{1}`")]
-    ImageMissingInFrame(String, String, Option<Vec<String>>),
-
     #[error("Can't create res/drawable directory. Cause: {0}")]
     CannotCreateDrawableDir(String),
 
