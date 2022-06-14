@@ -3,7 +3,6 @@ use crossterm::style::Stylize;
 use crate::common::renderer::{Indentable, Renderable};
 
 pub enum View {
-    GatheringStarted,
     FoundSimple(String),
     FoundThemed(String),
     NotFound(String, String),
@@ -13,12 +12,6 @@ pub enum View {
 impl Renderable for View {
     fn render(&self) -> String {
         match self {
-            View::GatheringStarted => {
-                format!(
-                    "{} resource names...\n",
-                    "Gathering".indent().bold().green(),
-                )
-            }
             View::FoundSimple(name) => format!(
                 "{} resource with name `{}`\n",
                 "Found".indent().bold().green(),

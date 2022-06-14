@@ -43,7 +43,7 @@ impl ImageInfo {
     }
 }
 
-pub fn export_images(token: &String, image_names: &Vec<String>, yaml_config_path: &String) {
+pub fn export_images(token: &String, image_names: &[String], yaml_config_path: &String) {
     let renderer = Renderer();
     let api = FigmaApi::new(create_http_client(&token));
 
@@ -108,7 +108,7 @@ fn export_image(
     // Get download url for exported image
     renderer.render(View::FetchingImage(
         image.user_name.clone(),
-        image.res.scale.name.clone(),
+        image.drawable_dir_name(),
     ));
     let image_download_url =
         api.get_image_download_url(file_id, node_id, image.res.scale.value, &image.format)?;
@@ -116,7 +116,7 @@ fn export_image(
     // Download image from gotten url to app's TEMPORARY dir
     renderer.render(View::DownloadingImage(
         image.user_name.clone(),
-        image.res.scale.name.clone(),
+        image.drawable_dir_name(),
     ));
     let image_format = &app_config.android.images.format;
     let image_temporary_file_name = api.get_image(
@@ -150,7 +150,7 @@ fn export_image(
     // Tell the user that we are done exporting image for this scale
     renderer.render(View::ImageExported(
         image.user_name.clone(),
-        image.res.scale.name.clone(),
+        image.drawable_dir_name(),
     ));
     Ok(())
 }

@@ -36,7 +36,7 @@ pub struct InfoGeneratorEntry {
 pub fn gather_names<G, I>(
     app_config: &AppConfig,
     frame_name: &String,
-    names: &Vec<String>,
+    names: &[String],
     names_to_ids: &HashMap<String, String>,
     single_scale_format: bool,
     info_generator: G,
@@ -50,7 +50,6 @@ where
         .iter()
         .map(|(k, _)| k.clone())
         .collect::<Vec<String>>();
-    renderer.render(View::GatheringStarted);
     let mut queue: Vec<I> = Vec::new();
 
     for user_name in names {
@@ -98,7 +97,7 @@ where
                     &mut |i| queue.push(i),
                     |scale_name, scale_value| {
                         let e = InfoGeneratorEntry {
-                            user_name: name.clone(),
+                            user_name: user_name.clone(),
                             figma_name: name.clone(),
                             figma_id: names_to_ids
                                 .get(&name)
