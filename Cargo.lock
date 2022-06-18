@@ -253,6 +253,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "eddie"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12ad36183b190ad1632999a8735b9842f3fda7a5afa433d9132e80860ef7051a"
+
+[[package]]
 name = "either"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -425,10 +431,11 @@ dependencies = [
 
 [[package]]
 name = "fxa"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clap",
  "crossterm",
+ "eddie",
  "image",
  "openssl-sys",
  "reqwest",

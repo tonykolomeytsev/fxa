@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     common::{
         gathering::view::View, renderer::Renderer, suffixes::SuffixExt,
-        suggestions::generate_name_suggections,
+        suggestions::generate_name_suggestions,
     },
     models::config::AppConfig,
 };
@@ -117,7 +117,7 @@ where
         // TODO: Tell the user that we will not export only one configuration.
 
         // Third, notify user about resource with desired name is missing in the frame
-        match generate_name_suggections(&user_name, &available_names) {
+        match generate_name_suggestions(&user_name, &available_names) {
             Some(suggestions) => renderer.render(View::NotFoundButSuggestions(
                 user_name.clone(),
                 frame_name.clone(),
