@@ -2,6 +2,10 @@
 name = "fxa"
 version = "0.2.2"
 edition = "2021"
+license = "MIT"
+authors = [ "Anton Kolomeytsev <tonykolomeytsev@gmail.com>" ]
+description = "Multi-platform tool for exporting icons and images from Figma to Android project"
+homepage = "https://github.com/tonykolomeytsev/fxa"
 
 [profile.release]
 opt-level = 3
