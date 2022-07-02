@@ -29,15 +29,15 @@ A multi-platform tool for exporting resources from Figma to an Android project.
 
 Just run on terminal:
 
-* `curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/macos.sh | bash` — for MacOS
+```bash
+curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install.sh | bash
+```
 
-* `curl -o- https://raw.githubusercontent.com/tonykolomeytsev/fxa/master/install/linux.sh | bash` — for Ubuntu
-
-* Or download and install suitable executable from [latest release](https://github.com/tonykolomeytsev/fxa/releases/latest).
+Or download suitable executable from the [latest release](https://github.com/tonykolomeytsev/fxa/releases/latest) and install it manually.
 
 ### Installation on Windows
 
-So far, there is no simple installation guide. Download the [zip archive from here](https://github.com/tonykolomeytsev/fxa/releases/latest/download/fxa-x86_64-pc-windows-msvc.zip) and unzip it. Inside there will be a `fxa.exe` program, you can run it from the terminal.
+Download the zip archive for windows from the [latest release](https://github.com/tonykolomeytsev/fxa/releases/latest), unzip it and run the installer `fxa.msi`. Allow the installer to add the program to PATH so that it is available to run in the terminal. 
 
 ### Build source code
 

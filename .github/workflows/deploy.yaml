@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build: [linux, windows]
+        build: [linux, windows, macos]
         include:
           - build: linux
             os: ubuntu-latest
@@ -36,6 +36,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
+      - uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-wix
+          version: latest
 
       - name: Query version number
         id: get_version
@@ -70,7 +75,9 @@ jobs:
 
       - name: Build (Windows)
         if: matrix.build == 'windows'
-        run: cargo build --release
+        run: |
+          cargo wix init
+          cargo wix -v --nocapture -o .
         env:
           RUSTFLAGS: -Ctarget-feature=+crt-static
 
@@ -95,6 +102,7 @@ jobs:
         shell: bash
         run: |
           mv ./target/release/${{ env.RELEASE_BIN }}.exe ./dist/${{ env.RELEASE_BIN }}.exe
+          mv ./*.msi ./dist/${{ env.RELEASE_BIN }}.msi
           mv ${{ env.RELEASE_ADDS }} ./dist
           7z a -tzip ./${{ env.RELEASE_DIR }}/${{ env.RELEASE_BIN }}-${{ steps.get_version.outputs.VERSION }}-${{ env.WINDOWS_TARGET }}.zip ./dist
 
